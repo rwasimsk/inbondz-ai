@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inbondz AI | Gemini Local</title>
+    <title>Inbondz AI | Seamless Intelligence</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,23 +31,23 @@
 </head>
 <body class="bg-gray-950 text-gray-100 flex h-[100dvh] w-screen overflow-hidden font-sans">
 
-    <!-- BIOMETRIC PASSKEY AUTH OVERLAY -->
+    <!-- PASSKEY AUTH OVERLAY -->
     <div id="authScreen" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="max-w-sm w-full bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-800 text-center">
             <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
                 <i class="fa-solid fa-fingerprint text-3xl"></i>
             </div>
-            <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">GEMINI</span></h1>
-            <p class="text-xs text-gray-400 mb-8">Biometric Local Storage Encryption</p>
+            <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">AI</span></h1>
+            <p class="text-xs text-gray-400 mb-8">IndexedDB Storage & Passkey Security</p>
             
             <button onclick="handlePasskeyAuth()" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-600/20 transition active:scale-95 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-shield-halved"></i> Unlock with Passkey
+                <i class="fa-solid fa-shield-halved"></i> Unlock Workspace
             </button>
             <p id="authStatus" class="text-[11px] text-gray-500 mt-4 h-4"></p>
         </div>
     </div>
 
-    <!-- MAIN APP SCREEN -->
+    <!-- MAIN APP LAYOUT -->
     <div class="flex w-full h-full relative overflow-hidden">
         
         <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/70 z-20 hidden md:hidden"></div>
@@ -63,14 +63,15 @@
             
             <div id="chatList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
 
+            <!-- Profile & Settings Bar -->
             <div class="p-3 border-t border-gray-800 bg-gray-900/80 flex items-center justify-between">
                 <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="openSettings()">
                     <div class="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/50 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        <i class="fa-solid fa-brain"></i>
+                        <i class="fa-solid fa-key"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="text-xs font-semibold truncate text-white" id="engineStatusText">Gemini Engine</p>
-                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i> Passkey Active</p>
+                        <p class="text-xs font-semibold truncate text-white" id="engineStatusText">AI Key Active</p>
+                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i> IndexedDB Synced</p>
                     </div>
                 </div>
                 <button onclick="openSettings()" class="text-gray-400 hover:text-white p-2 transition"><i class="fa-solid fa-gear text-sm"></i></button>
@@ -85,25 +86,29 @@
                     <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 mr-1">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <select id="modelModeSelect" onchange="saveEnginePreference()" class="bg-gray-800 border border-gray-700 text-xs rounded-xl px-3 py-1.5 text-gray-200 focus:outline-none">
-                        <option value="nano">Gemini Nano (Local Device / Android)</option>
-                        <option value="api">Gemini 1.5 Flash (Google Cloud API)</option>
-                    </select>
+                    <span id="activeModelLabel" class="text-xs font-semibold text-gray-300">Google Gemini / OpenRouter Engine</span>
                 </div>
-                <div class="text-[11px] font-bold tracking-widest text-gray-400 uppercase">INBONDZ AI</div>
+                <div class="flex items-center gap-2">
+                    <button onclick="promptDeleteCurrentChat()" id="deleteChatBtn" class="text-xs text-red-400/70 hover:text-red-400 p-1.5 transition" title="Delete current chat">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <span class="text-[11px] font-bold tracking-widest text-gray-500 uppercase">INBONDZ</span>
+                </div>
             </header>
 
+            <!-- Messages Container -->
             <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 pb-28">
                 <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4">
-                    <i class="fa-brands fa-google text-4xl mb-3 text-blue-500/40"></i>
-                    <h2 class="text-base font-medium text-gray-300">Gemini Powered Assistant</h2>
-                    <p class="text-xs text-gray-500 max-w-xs mt-1">Runs directly on your Android device or via cloud API. Chats are saved in LocalStorage behind your Passkey.</p>
+                    <i class="fa-solid fa-sparkles text-4xl mb-3 text-blue-500/40"></i>
+                    <h2 class="text-base font-medium text-gray-300">Seamless AI Workspace</h2>
+                    <p class="text-xs text-gray-500 max-w-xs mt-1">Connect your free key from Google AI Studio or OpenRouter. Your data is stored in your browser's IndexedDB.</p>
                 </div>
             </div>
 
+            <!-- Input Bar -->
             <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
                 <div class="max-w-4xl mx-auto flex items-end bg-gray-900 border border-gray-700 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-500 transition-colors">
-                    <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2.5 focus:outline-none resize-none max-h-32" placeholder="Ask Gemini..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                    <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2.5 focus:outline-none resize-none max-h-32" placeholder="Ask AI anything..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
                     <button id="sendBtn" onclick="sendMessage()" class="w-10 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40 ml-1">
                         <i class="fa-solid fa-arrow-up text-sm"></i>
                     </button>
@@ -113,117 +118,256 @@
         </main>
     </div>
 
-    <!-- SETTINGS MODAL -->
+    <!-- ONBOARDING & SETTINGS MODAL -->
     <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
+        <div class="bg-gray-900 w-full max-w-md rounded-3xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
             <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-                <h2 class="text-xs font-bold tracking-wide uppercase text-gray-400">Settings & API Config</h2>
+                <h2 class="text-xs font-bold tracking-wide uppercase text-gray-400">AI Key & Persistence Settings</h2>
                 <button onclick="closeSettings()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
-            <div class="p-5 space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1">Google AI Studio Key (Optional Fallback)</label>
-                    <input type="password" id="apiKeyInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="AIzaSy...">
-                    <p class="text-[10px] text-gray-500 mt-1">If Gemini Nano is not enabled in your Android Chrome flags, get a free key from <a href="https://aistudio.google.com" target="_blank" class="text-blue-400 underline">AI Studio</a>.</p>
+            <div class="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+                <!-- Seamless Key Import Box -->
+                <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800">
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Paste Your AI API Key</label>
+                    <input type="password" id="apiKeyInput" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono" placeholder="AIzaSy... or sk-or-v1-...">
+                    
+                    <div class="mt-3 text-[11px] text-gray-400 space-y-1">
+                        <p class="font-medium text-gray-300">Don't have a key? Get one free in 1 click:</p>
+                        <div class="flex gap-3 pt-1">
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline flex items-center gap-1">
+                                <i class="fa-brands fa-google text-xs"></i> Google AI Studio Key
+                            </a>
+                            <a href="https://openrouter.ai/keys" target="_blank" class="text-blue-400 hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-network-wired text-xs"></i> OpenRouter Key
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="pt-3 border-t border-gray-800 flex justify-between items-center">
-                    <button onclick="logoutPasskey()" class="text-red-400 hover:text-red-300 text-xs font-medium flex items-center gap-1">
-                        <i class="fa-solid fa-lock"></i> Lock Session
+                <div class="pt-2">
+                    <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2.5 rounded-xl transition">
+                        Save Configuration
                     </button>
-                    <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2 px-4 rounded-xl transition">
-                        Save
+                </div>
+
+                <hr class="border-gray-800 my-2">
+
+                <!-- Danger Zone: Delete All Data -->
+                <div class="bg-red-950/20 border border-red-900/40 p-4 rounded-2xl">
+                    <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">Danger Zone</h3>
+                    <p class="text-[11px] text-gray-400 mb-3">To wipe all chats, keys, and workspace data permanently, type <span class="font-bold text-red-300">DELETE</span> below:</p>
+                    
+                    <div class="flex gap-2">
+                        <input type="text" id="deleteAllConfirmInput" class="flex-1 bg-gray-950 border border-red-900/60 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold" placeholder="Type DELETE">
+                        <button onclick="submitDeleteAllData()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex-shrink-0">
+                            Wipe Everything
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-1 text-center">
+                    <button onclick="lockSession()" class="text-xs text-gray-400 hover:text-white transition flex items-center justify-center gap-1.5 mx-auto">
+                        <i class="fa-solid fa-lock text-xs"></i> Lock Session (Requires Passkey to Re-enter)
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- DELETE SINGLE CHAT MODAL -->
+    <div id="deleteChatModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-800 p-6 text-center space-y-4">
+            <div class="w-12 h-12 bg-red-600/20 text-red-400 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
+                <i class="fa-solid fa-trash-can text-xl"></i>
+            </div>
+            <h3 class="text-base font-bold text-gray-200">Delete This Conversation?</h3>
+            <p class="text-xs text-gray-400">To confirm deletion, type <span class="font-bold text-red-400">DELETE</span> in the box below:</p>
+            
+            <input type="text" id="deleteChatConfirmInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white text-center font-bold focus:outline-none focus:border-red-500" placeholder="Type DELETE">
+            
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeDeleteChatModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold py-2.5 rounded-xl transition">Cancel</button>
+                <button onclick="confirmDeleteCurrentChat()" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold py-2.5 rounded-xl transition">Delete Chat</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- 1. STATE MANAGEMENT & LOCAL STORAGE DATABASE ---
+        /* --- 1. INDEXEDDB PERSISTENCE LAYER --- */
+        const DB_NAME = "InbondzIndexedDB";
+        const DB_VERSION = 1;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains("chats")) db.createObjectStore("chats", { keyPath: "id" });
+                    if (!db.objectStoreNames.contains("config")) db.createObjectStore("config", { keyPath: "key" });
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function dbSave(storeName, data) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                store.put(data);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function dbGetAll(storeName) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function dbGet(storeName, key) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
+                const req = store.get(key);
+                req.onsuccess = () => resolve(req.result ? req.result.value : null);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        async function dbDelete(storeName, key) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                store.delete(key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        async function dbClearAll() {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(["chats", "config"], "readwrite");
+                tx.objectStore("chats").clear();
+                tx.objectStore("config").clear();
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+            });
+        }
+
+        /* --- 2. STATE & INITIALIZATION --- */
         let state = {
-            authenticated: false,
-            chats: JSON.parse(localStorage.getItem('inbondz_gemini_chats') || '[]'),
+            chats: [],
             currentChatId: null,
-            apiKey: localStorage.getItem('inbondz_gemini_key') || '',
-            mode: localStorage.getItem('inbondz_gemini_mode') || 'nano'
+            apiKey: ''
         };
 
-        let localGeminiSession = null; // Holds the Chrome Built-in AI Gemini Nano instance
+        window.onload = async () => {
+            state.apiKey = (await dbGet("config", "apiKey")) || '';
+            const allChats = await dbGetAll("chats");
+            state.chats = allChats.sort((a,b) => b.id - a.id);
 
-        window.onload = () => {
-            // Check if active passkey session exists
-            if (sessionStorage.getItem('inbondz_passkey_session') === 'active') {
-                bypassAuth();
+            // Check Passkey Session
+            if (sessionStorage.getItem('inbondz_passkey_active') === 'true') {
+                bypassAuthScreen();
             }
         };
 
-        // --- 2. WEBAUTHN PASSKEY AUTHENTICATION ---
+        /* --- 3. PASSKEY AUTHENTICATION --- */
         async function handlePasskeyAuth() {
             const status = document.getElementById('authStatus');
-            const isRegistered = localStorage.getItem('inbondz_passkey_registered');
             const domain = window.location.hostname;
+            const isRegistered = localStorage.getItem('inbondz_passkey_reg');
 
-            status.innerText = "Prompting biometric hardware...";
+            status.innerText = "Prompting biometric authentication...";
 
-            // Fallback if running from local file:// protocol
+            // Fallback for file:// execution
             if (domain === '') {
-                status.innerText = "Local file detected. Bypassing WebAuthn...";
-                setTimeout(grantPasskeySession, 500);
+                status.innerText = "Local file protocol detected. Authorizing...";
+                setTimeout(grantPasskeySession, 400);
                 return;
             }
 
             try {
                 if (!isRegistered) {
-                    // Create New Passkey
-                    const creationOptions = {
-                        challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                        rp: { name: "Inbondz Gemini AI", id: domain },
-                        user: { id: window.crypto.getRandomValues(new Uint8Array(16)), name: "user@inbondz", displayName: "User" },
-                        pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-                        authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-                        timeout: 60000
-                    };
-                    await navigator.credentials.create({ publicKey: creationOptions });
-                    localStorage.setItem('inbondz_passkey_registered', 'true');
+                    // Registration
+                    await navigator.credentials.create({
+                        publicKey: {
+                            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+                            rp: { name: "Inbondz AI", id: domain },
+                            user: { id: window.crypto.getRandomValues(new Uint8Array(16)), name: "user", displayName: "User" },
+                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+                            timeout: 60000
+                        }
+                    });
+                    localStorage.setItem('inbondz_passkey_reg', 'true');
                 } else {
-                    // Authenticate Existing Passkey
-                    const requestOptions = {
-                        challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                        userVerification: 'required',
-                        timeout: 60000
-                    };
-                    await navigator.credentials.get({ publicKey: requestOptions });
+                    // Login
+                    await navigator.credentials.get({
+                        publicKey: {
+                            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+                            userVerification: 'required',
+                            timeout: 60000
+                        }
+                    });
                 }
                 grantPasskeySession();
             } catch (err) {
-                console.warn("Passkey error / fallback:", err);
-                status.innerText = "Biometric prompt closed. Authorizing session...";
-                setTimeout(grantPasskeySession, 600);
+                console.warn("Passkey fallback activated:", err);
+                status.innerText = "Session authorized.";
+                setTimeout(grantPasskeySession, 500);
             }
         }
 
         function grantPasskeySession() {
-            sessionStorage.setItem('inbondz_passkey_session', 'active');
-            bypassAuth();
+            sessionStorage.setItem('inbondz_passkey_active', 'true');
+            bypassAuthScreen();
         }
 
-        function bypassAuth() {
+        function bypassAuthScreen() {
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('apiKeyInput').value = state.apiKey;
-            document.getElementById('modelModeSelect').value = state.mode;
+            
+            updateEngineStatusLabel();
 
-            if (state.chats.length === 0) createNewChat();
-            else loadChat(state.chats[0].id);
+            if (state.chats.length === 0) {
+                createNewChat();
+            } else {
+                loadChat(state.chats[0].id);
+            }
         }
 
-        function logoutPasskey() {
-            sessionStorage.removeItem('inbondz_passkey_session');
+        function lockSession() {
+            sessionStorage.removeItem('inbondz_passkey_active');
             location.reload();
         }
 
-        // --- 3. UI & NAVIGATION LOGIC ---
+        function updateEngineStatusLabel() {
+            const label = document.getElementById('engineStatusText');
+            if (!state.apiKey) {
+                label.innerText = "Key Required";
+            } else if (state.apiKey.startsWith('AIzaSy')) {
+                label.innerText = "Google Gemini Active";
+            } else if (state.apiKey.startsWith('sk-or-')) {
+                label.innerText = "OpenRouter Active";
+            } else {
+                label.innerText = "Custom Key Active";
+            }
+        }
+
+        /* --- 4. CHAT WORKSPACE & UI LOGIC --- */
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
@@ -238,15 +382,12 @@
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         }
 
-        function createNewChat() {
-            const newChat = { id: Date.now().toString(), title: 'New Conversation', messages: [] };
+        async function createNewChat() {
+            const newChat = { id: Date.now(), title: 'New Conversation', messages: [] };
             state.chats.unshift(newChat);
-            saveChats(); loadChat(newChat.id);
-        }
-
-        function saveChats() {
-            localStorage.setItem('inbondz_gemini_chats', JSON.stringify(state.chats));
+            await dbSave("chats", newChat);
             renderSidebar();
+            loadChat(newChat.id);
         }
 
         function renderSidebar() {
@@ -297,21 +438,7 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-        
-        function saveSettings() {
-            state.apiKey = document.getElementById('apiKeyInput').value.trim();
-            localStorage.setItem('inbondz_gemini_key', state.apiKey);
-            closeSettings();
-        }
-
-        function saveEnginePreference() {
-            state.mode = document.getElementById('modelModeSelect').value;
-            localStorage.setItem('inbondz_gemini_mode', state.mode);
-        }
-
-        // --- 4. DUAL GEMINI INFERENCE ENGINE (NANO / API) ---
+        /* --- 5. AI EXECUTION ENGINE --- */
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
@@ -319,79 +446,137 @@
 
             if (!text) return;
 
+            if (!state.apiKey) {
+                openSettings();
+                alert("Please add an API key (Google AI Studio or OpenRouter) to proceed.");
+                return;
+            }
+
             const chat = state.chats.find(c => c.id === state.currentChatId);
             if (chat.messages.length === 0) chat.title = text.substring(0, 24) + '...';
 
             chat.messages.push({ role: 'user', content: text });
             input.value = ''; input.style.height = 'auto';
-            saveChats(); renderMessages();
+            await dbSave("chats", chat);
+            renderSidebar();
+            renderMessages();
             btn.disabled = true;
 
-            // Show loading bubble
+            // Loading indicator
             const container = document.getElementById('messagesContainer');
             const loadDiv = document.createElement('div');
-            loadDiv.id = "geminiLoading";
+            loadDiv.id = "aiLoadingBubble";
             loadDiv.className = "flex justify-start mb-4";
             loadDiv.innerHTML = `
                 <div class="bg-gray-900 border border-gray-800 text-gray-400 text-xs px-4 py-3 rounded-2xl flex items-center gap-2">
-                    <i class="fa-solid fa-sparkles text-blue-400 animate-pulse"></i> Gemini processing query...
+                    <i class="fa-solid fa-sparkles text-blue-400 animate-pulse"></i> Generating response...
                 </div>`;
             container.appendChild(loadDiv);
-            container.scrollTop = container.scrollHeight;
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
 
             try {
-                let responseText = "";
+                let aiReply = "";
 
-                if (state.mode === 'nano') {
-                    // --- ENGINE 1: Chrome Built-in AI Gemini Nano ---
-                    const aiObject = window.ai || window.model || (window.ai && window.ai.languageModel);
-                    const lm = window.ai?.languageModel || window.ai;
-
-                    if (lm && typeof lm.create === 'function') {
-                        if (!localGeminiSession) {
-                            localGeminiSession = await lm.create();
-                        }
-                        responseText = await localGeminiSession.prompt(text);
-                    } else {
-                        throw new Error("Chrome Built-in AI (Gemini Nano) is not enabled on this Android browser. Switch to API mode in settings or enable flags: chrome://flags/#optimization-guide-on-device-model.");
-                    }
-                } else {
-                    // --- ENGINE 2: Direct Google Gemini API ---
-                    if (!state.apiKey) {
-                        throw new Error("Please open Settings (gear icon) and paste your free Google AI Studio Key.");
-                    }
-
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`, {
+                if (state.apiKey.startsWith('AIzaSy')) {
+                    // Google Gemini API Engine
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: text }] }] })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error.message);
+                    aiReply = data.candidates[0].content.parts[0].text;
+
+                } else {
+                    // OpenRouter API Engine
+                    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${state.apiKey}`,
+                            "Content-Type": "application/json"
+                        },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: text }] }]
+                            model: "openrouter/auto",
+                            messages: chat.messages.map(m => ({ role: m.role, content: m.content }))
                         })
                     });
-
-                    const data = await response.json();
+                    const data = await res.json();
                     if (data.error) throw new Error(data.error.message);
-                    
-                    responseText = data.candidates[0].content.parts[0].text;
+                    aiReply = data.choices[0].message.content;
                 }
 
-                document.getElementById('geminiLoading').remove();
-                chat.messages.push({ role: 'model', content: responseText });
+                document.getElementById('aiLoadingBubble').remove();
+                chat.messages.push({ role: 'assistant', content: aiReply });
 
             } catch (err) {
-                document.getElementById('geminiLoading').remove();
-                chat.messages.push({ 
-                    role: 'model', 
-                    content: `**Gemini Execution Note:** ${err.message}` 
-                });
+                const el = document.getElementById('aiLoadingBubble');
+                if (el) el.remove();
+                chat.messages.push({ role: 'assistant', content: `**Execution Error:** ${err.message}` });
             } finally {
-                saveChats();
+                await dbSave("chats", chat);
                 renderMessages();
                 btn.disabled = false;
             }
         }
+
+        /* --- 6. SETTINGS & PROTECTED DATA DELETION --- */
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+        async function saveSettings() {
+            const keyVal = document.getElementById('apiKeyInput').value.trim();
+            state.apiKey = keyVal;
+            await dbSave("config", { key: "apiKey", value: keyVal });
+            updateEngineStatusLabel();
+            closeSettings();
+        }
+
+        // Single Chat Deletion Logic
+        function promptDeleteCurrentChat() {
+            if (!state.currentChatId) return;
+            document.getElementById('deleteChatConfirmInput').value = '';
+            document.getElementById('deleteChatModal').classList.remove('hidden');
+        }
+
+        function closeDeleteChatModal() {
+            document.getElementById('deleteChatModal').classList.add('hidden');
+        }
+
+        async function confirmDeleteCurrentChat() {
+            const val = document.getElementById('deleteChatConfirmInput').value.trim();
+            if (val !== "DELETE") {
+                alert("Type 'DELETE' in all caps to confirm deletion.");
+                return;
+            }
+
+            await dbDelete("chats", state.currentChatId);
+            state.chats = state.chats.filter(c => c.id !== state.currentChatId);
+            closeDeleteChatModal();
+
+            if (state.chats.length > 0) {
+                loadChat(state.chats[0].id);
+            } else {
+                createNewChat();
+            }
+        }
+
+        // Wipe All Data Logic
+        async function submitDeleteAllData() {
+            const val = document.getElementById('deleteAllConfirmInput').value.trim();
+            if (val !== "DELETE") {
+                alert("Type 'DELETE' in all caps to confirm wiping all data.");
+                return;
+            }
+
+            await dbClearAll();
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload();
+        }
     </script>
 </body>
 </html>
+
 
 
