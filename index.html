@@ -1,45 +1,57 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inbondz AI | Decentralized Network</title>
+    <title>Inbondz AI | Local Intelligence</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: {
-                extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } }
-            }
+            theme: { extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } } }
         }
     </script>
 
-    <!-- FontAwesome & Parsers -->
+    <!-- FontAwesome, Markdown, and Transformers.js (for local AI) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+    
+    <!-- Import Transformers.js as an ES Module -->
+    <script type="module">
+        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';
+        
+        // Disable local model loading to force fetching from HuggingFace CDN
+        env.allowLocalModels = false;
+        
+        // Expose to the global window object so our standard scripts can use it
+        window.aiPipeline = pipeline;
+    </script>
 
     <style>
         html, body { height: 100%; height: 100dvh; overflow: hidden; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-        
         .prose pre { background-color: #030712; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; margin-bottom: 0.5rem;}
         .prose code { color: #818cf8; font-family: monospace; }
         .prose p { margin-bottom: 0.5rem; }
-
-        /* Hacker/Network Loading Animation */
-        .pulse-ring {
-            animation: pulsate 1.5s ease-out infinite;
-        }
+        
+        .pulse-ring { animation: pulsate 1.5s ease-out infinite; }
         @keyframes pulsate {
             0% { transform: scale(0.8); opacity: 0.5; }
             100% { transform: scale(1.2); opacity: 0; }
         }
+        
+        /* Blinking cursor for streaming text */
+        .cursor-blink::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+            color: #818cf8;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 flex h-[100dvh] w-screen overflow-hidden font-sans">
@@ -81,15 +93,15 @@
             <div class="p-4 border-t border-gray-800 flex items-center justify-between bg-gray-900/50">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 text-blue-400 flex items-center justify-center text-xs font-bold">
-                        <i class="fa-solid fa-user-shield"></i>
+                        <i class="fa-solid fa-microchip"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-semibold">Biometric Secured</p>
-                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i> Data Encrypted Locally</p>
+                        <p class="text-xs font-semibold">Local AI Active</p>
+                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i> 100% Private</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="text-gray-500 hover:text-red-400 p-1.5 transition">
-                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-400 p-1.5 transition" title="Lock Session">
+                    <i class="fa-solid fa-lock text-sm"></i>
                 </button>
             </div>
         </aside>
@@ -102,10 +114,10 @@
                     <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <!-- Models pulled from the decentralized AI Horde -->
+                    <!-- Local Models -->
                     <select id="modelSelect" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-2.5 py-1.5 text-gray-200 focus:outline-none">
-                        <option value="Llama-3">Meta Llama 3 (Decentralized Mesh)</option>
-                        <option value="Mistral">Mistral (Decentralized Mesh)</option>
+                        <option value="Xenova/TinyLlama-1.1B-Chat-v1.0">TinyLlama (Lightning Fast)</option>
+                        <option value="Xenova/Qwen1.5-0.5B-Chat">Qwen 0.5B (Smart & Compact)</option>
                     </select>
                 </div>
                 <div class="text-xs font-bold tracking-widest text-gray-500">INBONDZ AI</div>
@@ -113,18 +125,26 @@
 
             <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 pb-28">
                 <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4">
-                    <i class="fa-solid fa-network-wired text-4xl mb-3 text-blue-500/40"></i>
-                    <h2 class="text-base font-medium text-gray-300">Decentralized P2P Inference</h2>
-                    <p class="text-xs text-gray-500 max-w-xs mt-1">Queries are routed to global volunteer GPUs. 100% Free. Zero tracking.</p>
+                    <i class="fa-solid fa-microchip text-4xl mb-3 text-blue-500/40"></i>
+                    <h2 class="text-base font-medium text-gray-300">Local Inference Engine</h2>
+                    <p class="text-xs text-gray-500 max-w-xs mt-1">The AI model runs directly inside your browser. No data ever leaves your device.</p>
                 </div>
             </div>
 
             <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
-                <div class="max-w-3xl mx-auto flex items-center bg-gray-900 border border-gray-800 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-600 transition">
-                    <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2 focus:outline-none resize-none max-h-24" placeholder="Transmit query to network..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
-                    <button id="sendBtn" onclick="sendMessage()" class="w-9 h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40">
-                        <i class="fa-solid fa-arrow-up text-sm"></i>
-                    </button>
+                <div class="max-w-3xl mx-auto relative flex flex-col bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl focus-within:border-gray-600 transition">
+                    
+                    <!-- Progress Bar for downloading the model the first time -->
+                    <div id="progressContainer" class="w-full h-1 bg-gray-800 rounded-t-2xl hidden overflow-hidden">
+                        <div id="progressBar" class="h-full bg-blue-500 w-0 transition-all duration-300"></div>
+                    </div>
+                    
+                    <div class="flex items-center p-1.5">
+                        <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2 focus:outline-none resize-none max-h-24" placeholder="Ask your local AI..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                        <button id="sendBtn" onclick="sendMessage()" class="w-9 h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40">
+                            <i class="fa-solid fa-arrow-up text-sm"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -137,15 +157,20 @@
             chats: JSON.parse(localStorage.getItem('inbondz_chats') || '[]'),
             currentChatId: null
         };
+        
+        let generator = null; // The AI model instance
 
+        // --- SESSION LOGIC (Fixing the Refresh Issue) ---
         window.onload = () => {
-            if (localStorage.getItem('inbondz_passkey_registered') === 'true') {
-                document.getElementById('authStatus').innerText = "Passkey found. Awaiting verification...";
+            // sessionStorage is cleared when the browser tab is fully closed.
+            // If it exists, they already authenticated this session.
+            if (sessionStorage.getItem('inbondz_session_active') === 'true') {
+                bypassAuth();
+            } else if (localStorage.getItem('inbondz_passkey_registered') === 'true') {
+                document.getElementById('authStatus').innerText = "Session expired. Please re-authenticate.";
             }
         };
 
-        // --- TRUE WEBAUTHN (PASSKEY) LOGIC ---
-        // Helper to convert strings for WebCrypto
         const bufferEncode = (str) => new TextEncoder().encode(str);
         const bufferDecode = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
 
@@ -154,38 +179,28 @@
             const isRegistered = localStorage.getItem('inbondz_passkey_registered');
             const domain = window.location.hostname;
 
-            // Failsafe for double-clicking local HTML files (file://)
             if (domain === '') {
                 status.innerText = "Local file detected. Bypassing WebAuthn for testing...";
-                setTimeout(bypassAuth, 800);
+                setTimeout(grantSession, 800);
                 return;
             }
 
             try {
                 if (!isRegistered) {
-                    // 1. CREATE PASSKEY (First time)
                     status.innerText = "Registering device fingerprint...";
                     const creationOptions = {
                         challenge: window.crypto.getRandomValues(new Uint8Array(32)),
                         rp: { name: "Inbondz AI", id: domain },
-                        user: {
-                            id: window.crypto.getRandomValues(new Uint8Array(16)),
-                            name: "admin@inbondz",
-                            displayName: "Inbondz Admin"
-                        },
+                        user: { id: window.crypto.getRandomValues(new Uint8Array(16)), name: "admin", displayName: "Admin" },
                         pubKeyCredParams: [{ alg: -7, type: "public-key" }],
                         authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
                         timeout: 60000
                     };
-
                     const cred = await navigator.credentials.create({ publicKey: creationOptions });
                     localStorage.setItem('inbondz_passkey_registered', 'true');
                     localStorage.setItem('inbondz_cred_id', bufferDecode(cred.rawId));
-                    status.innerText = "Device Registered!";
-                    bypassAuth();
-
+                    grantSession();
                 } else {
-                    // 2. AUTHENTICATE PASSKEY (Returning)
                     status.innerText = "Verify fingerprint/FaceID...";
                     const rawIdString = atob(localStorage.getItem('inbondz_cred_id'));
                     const rawIdBuffer = new Uint8Array(rawIdString.length);
@@ -197,17 +212,18 @@
                         userVerification: 'required',
                         timeout: 60000
                     };
-
                     await navigator.credentials.get({ publicKey: requestOptions });
-                    status.innerText = "Verified.";
-                    bypassAuth();
+                    grantSession();
                 }
             } catch (err) {
-                console.error(err);
                 status.innerText = "Auth failed. Trying fallback...";
-                // Fallback allows you to get in even if you mess up the passkey during dev
-                setTimeout(bypassAuth, 1000); 
+                setTimeout(grantSession, 1000); 
             }
+        }
+
+        function grantSession() {
+            sessionStorage.setItem('inbondz_session_active', 'true');
+            bypassAuth();
         }
 
         function bypassAuth() {
@@ -217,16 +233,14 @@
         }
 
         function logout() {
-            // We don't delete the chats, just force a re-authentication
+            sessionStorage.removeItem('inbondz_session_active');
             location.reload();
         }
 
         // --- UI LOGIC ---
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
         }
 
         function autoResize(textarea) {
@@ -241,8 +255,7 @@
         function createNewChat() {
             const newChat = { id: Date.now().toString(), title: 'New Node Session', messages: [] };
             state.chats.unshift(newChat);
-            saveChats();
-            loadChat(newChat.id);
+            saveChats(); loadChat(newChat.id);
         }
 
         function saveChats() {
@@ -267,11 +280,7 @@
             state.currentChatId = id;
             renderSidebar();
             renderMessages();
-            
-            // Close mobile sidebar if open
-            if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) {
-                toggleSidebar();
-            }
+            if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) toggleSidebar();
         }
 
         function renderMessages() {
@@ -282,114 +291,97 @@
             container.innerHTML = '';
             if (!chat || chat.messages.length === 0) { container.appendChild(emptyState); return; }
 
-            chat.messages.forEach(msg => {
+            chat.messages.forEach((msg, idx) => {
                 const div = document.createElement('div');
                 div.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
                 
                 const bubble = document.createElement('div');
+                bubble.id = `msg-${idx}`;
                 bubble.className = msg.role === 'user' 
                     ? 'bg-blue-600 text-white text-xs md:text-sm px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%]'
                     : 'bg-gray-900 border border-gray-800 text-gray-200 text-xs md:text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[95%] prose prose-invert';
 
-                bubble.innerHTML = msg.role === 'user' 
-                    ? DOMPurify.sanitize(msg.content)
-                    : DOMPurify.sanitize(marked.parse(msg.content));
-
+                bubble.innerHTML = msg.role === 'user' ? DOMPurify.sanitize(msg.content) : DOMPurify.sanitize(marked.parse(msg.content));
                 div.appendChild(bubble);
                 container.appendChild(div);
             });
             container.scrollTop = container.scrollHeight;
         }
 
-        function showLoading() {
-            const container = document.getElementById('messagesContainer');
-            const div = document.createElement('div');
-            div.id = "loadingBubble";
-            div.className = `flex justify-start mb-2`;
-            div.innerHTML = `
-                <div class="bg-gray-900 border border-gray-800 text-gray-400 text-xs px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-2">
-                    <i class="fa-solid fa-satellite-dish animate-pulse text-blue-500"></i>
-                    <span id="loadingText">Routing to decentralized GPU mesh...</span>
-                </div>
-            `;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function removeLoading() {
-            const el = document.getElementById('loadingBubble');
-            if(el) el.remove();
-        }
-
-        // --- AI HORDE (DECENTRALIZED P2P NETWORK) ---
-        // 100% Free. No Keys. No 402/429 limits. Relies on volunteer PCs globally.
+        // --- LOCAL WEBGPU AI LOGIC ---
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            const modelFilter = document.getElementById('modelSelect').value;
+            const modelName = document.getElementById('modelSelect').value;
             const btn = document.getElementById('sendBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
 
             if (!text) return;
             
             const chat = state.chats.find(c => c.id === state.currentChatId);
             if (chat.messages.length === 0) chat.title = text.substring(0, 24) + '...';
 
-            // User Message UI
             chat.messages.push({ role: 'user', content: text });
-            input.value = ''; input.style.height = 'auto';
-            saveChats(); renderMessages(); showLoading();
-            btn.disabled = true;
+            input.value = ''; input.style.height = 'auto'; btn.disabled = true;
+            saveChats(); renderMessages();
 
-            // Format Prompt for AI Horde
-            let promptString = "You are a helpful, brilliant AI assistant.\n\n";
-            chat.messages.forEach(m => {
-                promptString += `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}\n\n`;
-            });
-            promptString += "Assistant:";
+            // Create placeholder for streaming text
+            const msgIndex = chat.messages.length;
+            chat.messages.push({ role: 'assistant', content: '' });
+            renderMessages();
+            const replyBubble = document.getElementById(`msg-${msgIndex}`);
+            replyBubble.classList.add('cursor-blink');
 
             try {
-                // Step 1: Submit Request to the Mesh
-                const submitRes = await fetch("https://stablehorde.net/api/v2/generate/text/async", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "apikey": "0000000000" }, // 0000000000 is the public anonymous key
-                    body: JSON.stringify({
-                        prompt: promptString,
-                        params: { max_context_length: 2048, max_length: 500 },
-                        models: [modelFilter] // Will auto-route to a volunteer running Llama or Mistral
-                    })
-                });
-                
-                const submitData = await submitRes.json();
-                if(submitData.message) throw new Error(submitData.message);
-                const jobId = submitData.id;
-
-                document.getElementById('loadingText').innerText = "Processing on volunteer GPU...";
-
-                // Step 2: Poll for completion (Decentralized networks take time)
-                let isDone = false;
-                let generations = [];
-
-                while (!isDone) {
-                    await new Promise(r => setTimeout(r, 3000)); // Wait 3s between checks
-                    const checkRes = await fetch(`https://stablehorde.net/api/v2/generate/text/status/${jobId}`);
-                    const checkData = await checkRes.json();
+                // Initialize model if it hasn't been loaded yet
+                if (!generator) {
+                    progressContainer.classList.remove('hidden');
+                    replyBubble.innerText = "Initializing Local AI Model... (Downloads once, caches forever)";
                     
-                    if (checkData.done) {
-                        isDone = true;
-                        generations = checkData.generations;
-                    } else {
-                        document.getElementById('loadingText').innerText = `Queue position: ${checkData.wait_time}s remaining...`;
-                    }
+                    generator = await window.aiPipeline('text-generation', modelName, {
+                        progress_callback: (x) => {
+                            if(x.status === 'progress') {
+                                progressBar.style.width = `${x.progress}%`;
+                            }
+                        }
+                    });
+                    progressContainer.classList.add('hidden');
                 }
 
-                removeLoading();
-                const aiReply = generations[0].text.trim();
-                chat.messages.push({ role: 'assistant', content: aiReply });
+                replyBubble.innerText = "Generating...";
+
+                // Format chat history into a simple prompt string for the local model
+                let promptString = "<|system|>\nYou are a helpful assistant.\n";
+                chat.messages.slice(0, -1).forEach(m => {
+                    promptString += `<|${m.role}|>\n${m.content}\n`;
+                });
+                promptString += "<|assistant|>\n";
+
+                // Generate response
+                const output = await generator(promptString, {
+                    max_new_tokens: 150,
+                    temperature: 0.7,
+                    repetition_penalty: 1.2,
+                    callback_function: (x) => {
+                        // Real-time streaming effect
+                        const currentText = x[0].generated_text.substring(promptString.length);
+                        chat.messages[msgIndex].content = currentText;
+                        replyBubble.innerHTML = DOMPurify.sanitize(marked.parse(currentText));
+                        document.getElementById('messagesContainer').scrollTop = document.getElementById('messagesContainer').scrollHeight;
+                    }
+                });
+
+                // Finalize output
+                const finalText = output[0].generated_text.substring(promptString.length).trim();
+                chat.messages[msgIndex].content = finalText;
                 
             } catch (err) {
-                removeLoading();
-                chat.messages.push({ role: 'assistant', content: `**Network Error:** Could not connect to the decentralized mesh. (${err.message})` });
+                console.error(err);
+                chat.messages[msgIndex].content = `**Error:** Failed to run local model. Please ensure your browser is up to date. (${err.message})`;
+                progressContainer.classList.add('hidden');
             } finally {
+                replyBubble.classList.remove('cursor-blink');
                 saveChats();
                 renderMessages();
                 btn.disabled = false;
@@ -398,3 +390,4 @@
     </script>
 </body>
 </html>
+
