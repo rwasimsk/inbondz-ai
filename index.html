@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inbondz AI | Decentralized Intelligence</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- DOMPurify for security -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+
+    <style>
+        /* Custom Scrollbar for a sleek look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        
+        /* Markdown Styles */
+        .prose pre { background-color: #111827; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .prose code { font-family: monospace; color: #a5b4fc; }
+        .prose p { margin-bottom: 0.75rem; }
+        .prose ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        .prose ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 0.75rem; }
+        
+        .loader-dots div {
+            animation-timing-function: cubic-bezier(0, 1, 1, 0);
+        }
+        .loader-dots div:nth-child(1) { left: 8px; animation: loader-dots1 0.6s infinite; }
+        .loader-dots div:nth-child(2) { left: 8px; animation: loader-dots2 0.6s infinite; }
+        .loader-dots div:nth-child(3) { left: 32px; animation: loader-dots2 0.6s infinite; }
+        .loader-dots div:nth-child(4) { left: 56px; animation: loader-dots3 0.6s infinite; }
+        @keyframes loader-dots1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        @keyframes loader-dots3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+        @keyframes loader-dots2 { 0% { transform: translate(0, 0); } 100% { transform: translate(24px, 0); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 h-screen overflow-hidden flex font-sans">
+
+    <!-- SCREEN 1: AUTHENTICATION / LOGIN -->
+    <div id="authScreen" class="fixed inset-0 bg-gray-950 z-50 flex flex-col items-center justify-center p-4">
+        <div class="max-w-md w-full bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-800 text-center">
+            <h1 class="text-3xl font-bold mb-2 tracking-wider">INBONDZ <span class="text-blue-500">AI</span></h1>
+            <p class="text-gray-400 mb-8 text-sm">Decentralized, persistent, and free.</p>
+            
+            <div id="authOptions">
+                <button onclick="showCreateProfile()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg mb-4 transition">
+                    Create New Identity
+                </button>
+                <button onclick="showLogin()" class="w-full bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg border border-gray-700 transition">
+                    Login with Passphrase
+                </button>
+            </div>
+
+            <!-- Create Profile View -->
+            <div id="createProfileView" class="hidden text-left">
+                <label class="block text-sm text-gray-400 mb-2">Display Name</label>
+                <input type="text" id="newDisplayName" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white mb-4 focus:outline-none focus:border-blue-500" placeholder="e.g. Satoshi">
+                
+                <div id="passphraseContainer" class="hidden mb-6">
+                    <label class="block text-sm text-gray-400 mb-2">Your Recovery Passphrase (Save this!)</label>
+                    <div id="generatedPassphrase" class="bg-gray-950 p-4 rounded-lg font-mono text-blue-400 text-sm tracking-wide leading-relaxed border border-gray-800"></div>
+                </div>
+
+                <button id="generateBtn" onclick="generateIdentity()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition">
+                    Generate Keys
+                </button>
+                <button id="enterAppBtn" onclick="enterApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition hidden">
+                    I have saved it. Enter App.
+                </button>
+            </div>
+
+            <!-- Login View -->
+            <div id="loginView" class="hidden text-left">
+                <label class="block text-sm text-gray-400 mb-2">Enter 12-Word Passphrase</label>
+                <textarea id="loginPassphrase" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white mb-4 h-24 focus:outline-none focus:border-blue-500" placeholder="word1 word2 word3..."></textarea>
+                <button onclick="loginWithPassphrase()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition">
+                    Decrypt & Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-950 flex flex-col border-r border-gray-800 hidden md:flex transition-all z-20" id="sidebar">
+        <div class="p-4">
+            <button onclick="createNewChat()" class="w-full flex items-center justify-center gap-2 bg-transparent border border-gray-600 hover:border-gray-400 text-white font-medium py-2 px-4 rounded-lg transition">
+                <i class="fa-solid fa-plus"></i> New Chat
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-2 space-y-1" id="chatList">
+            <!-- Chat history injected here -->
+        </div>
+
+        <!-- Profile Bottom Bar -->
+        <div class="p-4 border-t border-gray-800 flex items-center gap-3 cursor-pointer hover:bg-gray-900 transition rounded-t-lg" onclick="openSettings()">
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm" id="avatarInitial">I</div>
+            <div class="flex-1 overflow-hidden">
+                <p class="text-sm font-medium truncate" id="profileName">User</p>
+                <p class="text-xs text-gray-500">Settings & API</p>
+            </div>
+            <i class="fa-solid fa-gear text-gray-400"></i>
+        </div>
+    </aside>
+
+    <!-- Chat Area -->
+    <main class="flex-1 flex flex-col relative bg-gray-900">
+        <!-- Header -->
+        <header class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-gray-900/80 backdrop-blur-sm sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <select id="modelSelect" class="bg-gray-800 border border-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 text-white outline-none" onchange="saveSettings()">
+                    <option value="openrouter/free">Auto Free Router (Fastest)</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 8B (Free)</option>
+                    <option value="google/gemma-2-9b-it:free">Google Gemma 2 (Free)</option>
+                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Free)</option>
+                </select>
+            </div>
+            <div class="text-sm font-medium tracking-widest text-gray-500">INBONDZ AI</div>
+        </header>
+
+        <!-- Messages Container -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-8 pb-32">
+            <!-- Messages injected here -->
+            <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-500 hidden">
+                <i class="fa-brands fa-connectdevelop text-5xl mb-4 text-gray-700"></i>
+                <h2 class="text-xl font-medium mb-2">How can I help you today?</h2>
+                <p class="text-sm max-w-sm text-center">Your data is stored locally. Enter your API key in settings to access models.</p>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900 via-gray-900 to-transparent">
+            <div class="max-w-4xl mx-auto relative flex items-end bg-gray-800 border border-gray-700 rounded-xl shadow-lg overflow-hidden focus-within:border-gray-500 transition-colors">
+                <textarea id="messageInput" rows="1" class="w-full max-h-32 bg-transparent text-white p-4 pr-12 focus:outline-none resize-none" placeholder="Message Inbondz AI..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                <button onclick="sendMessage()" id="sendBtn" class="absolute right-2 bottom-2 p-2 text-gray-400 hover:text-white bg-gray-700 hover:bg-gray-600 rounded-lg transition disabled:opacity-50">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+            <p class="text-center text-xs text-gray-500 mt-2">AI can make mistakes. Everything is saved locally on your device.</p>
+        </div>
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-gray-900 w-full max-w-lg rounded-xl border border-gray-700 shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+                <h2 class="text-lg font-bold">Profile & Network Settings</h2>
+                <button onclick="closeSettings()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto">
+                
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">OpenRouter API Key (Required for Free Models)</label>
+                    <input type="password" id="apiKeyInput" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-blue-500 text-sm" placeholder="sk-or-v1-...">
+                    <p class="text-xs text-gray-500 mt-1">Get a free key at <a href="https://openrouter.ai" target="_blank" class="text-blue-400 hover:underline">openrouter.ai</a> to access lifetime free decentralized models.</p>
+                </div>
+
+                <hr class="border-gray-800 my-4">
+
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Your Identity Passphrase</label>
+                    <div class="bg-gray-950 p-3 rounded-lg font-mono text-gray-400 text-xs tracking-wide border border-gray-800 select-all" id="settingsPassphrase"></div>
+                    <p class="text-xs text-red-400 mt-1">Keep this safe. It is your only way to recover this profile on another browser.</p>
+                </div>
+
+                <div class="pt-4 flex justify-between">
+                    <button onclick="logout()" class="text-red-500 hover:text-red-400 text-sm font-medium"><i class="fa-solid fa-right-from-bracket mr-1"></i> Sign Out</button>
+                    <button onclick="saveSettingsAndClose()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- STATE MANAGEMENT & LOCAL STORAGE --- */
+        let state = {
+            profile: null, // { name, passphrase }
+            settings: { apiKey: '', model: 'openrouter/free' },
+            chats: [], // [ { id, title, messages: [] } ]
+            currentChatId: null
+        };
+
+        const WORD_LIST = ["alpha","bravo","charlie","delta","echo","foxtrot","golf","hotel","india","juliet","kilo","lima","mike","november","oscar","papa","quebec","romeo","sierra","tango","uniform","victor","whiskey","xray","yankee","zulu","quantum","node","block","chain","hash","cipher","pulse","grid","mesh","flux","void","core","apex","nexus"];
+
+        // Init App
+        window.onload = () => {
+            loadData();
+            if (!state.profile) {
+                document.getElementById('authScreen').classList.remove('hidden');
+            } else {
+                document.getElementById('authScreen').classList.add('hidden');
+                initializeApp();
+            }
+        };
+
+        function loadData() {
+            const savedProfile = localStorage.getItem('inbondz_profile');
+            const savedSettings = localStorage.getItem('inbondz_settings');
+            const savedChats = localStorage.getItem('inbondz_chats');
+
+            if (savedProfile) state.profile = JSON.parse(savedProfile);
+            if (savedSettings) {
+                state.settings = { ...state.settings, ...JSON.parse(savedSettings) };
+            }
+            if (savedChats) state.chats = JSON.parse(savedChats);
+        }
+
+        function saveData() {
+            localStorage.setItem('inbondz_profile', JSON.stringify(state.profile));
+            localStorage.setItem('inbondz_settings', JSON.stringify(state.settings));
+            localStorage.setItem('inbondz_chats', JSON.stringify(state.chats));
+        }
+
+        /* --- AUTHENTICATION / IDENTITY --- */
+        function showCreateProfile() {
+            document.getElementById('authOptions').classList.add('hidden');
+            document.getElementById('createProfileView').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('authOptions').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+        }
+
+        function generateIdentity() {
+            const name = document.getElementById('newDisplayName').value.trim() || 'Anonymous';
+            // Generate 12 random words
+            let phrase = [];
+            for(let i=0; i<12; i++) {
+                phrase.push(WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)]);
+            }
+            const passphrase = phrase.join(' ');
+            
+            state.profile = { name, passphrase };
+            
+            document.getElementById('generatedPassphrase').innerText = passphrase;
+            document.getElementById('passphraseContainer').classList.remove('hidden');
+            document.getElementById('generateBtn').classList.add('hidden');
+            document.getElementById('enterAppBtn').classList.remove('hidden');
+        }
+
+        function enterApp() {
+            saveData();
+            document.getElementById('authScreen').classList.add('hidden');
+            initializeApp();
+        }
+
+        function loginWithPassphrase() {
+            const phrase = document.getElementById('loginPassphrase').value.trim();
+            if (phrase.split(' ').length < 12) {
+                alert("Invalid passphrase. Must be 12 words.");
+                return;
+            }
+            // For this HTML-only version, any 12 words logs you into a new profile derived from it.
+            state.profile = { name: 'Recovered User', passphrase: phrase };
+            saveData();
+            document.getElementById('authScreen').classList.add('hidden');
+            initializeApp();
+        }
+
+        function logout() {
+            if(confirm("Warning: If you haven't saved your passphrase, you will lose access to this profile. Continue?")) {
+                localStorage.removeItem('inbondz_profile');
+                localStorage.removeItem('inbondz_chats');
+                localStorage.removeItem('inbondz_settings');
+                location.reload();
+            }
+        }
+
+        /* --- UI & RENDER LOGIC --- */
+        function initializeApp() {
+            document.getElementById('profileName').innerText = state.profile.name;
+            document.getElementById('avatarInitial').innerText = state.profile.name.charAt(0).toUpperCase();
+            
+            document.getElementById('modelSelect').value = state.settings.model;
+            document.getElementById('apiKeyInput').value = state.settings.apiKey;
+            document.getElementById('settingsPassphrase').innerText = state.profile.passphrase;
+
+            renderSidebar();
+            
+            if (state.chats.length === 0) {
+                createNewChat();
+            } else {
+                loadChat(state.chats[0].id);
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('absolute');
+            sidebar.classList.toggle('h-full');
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        /* --- CHAT LOGIC --- */
+        function createNewChat() {
+            const newChat = {
+                id: Date.now().toString(),
+                title: 'New Conversation',
+                messages: []
+            };
+            state.chats.unshift(newChat);
+            saveData();
+            renderSidebar();
+            loadChat(newChat.id);
+        }
+
+        function renderSidebar() {
+            const chatList = document.getElementById('chatList');
+            chatList.innerHTML = '';
+            
+            state.chats.forEach(chat => {
+                const btn = document.createElement('button');
+                const isActive = chat.id === state.currentChatId;
+                btn.className = `w-full text-left truncate py-2 px-3 rounded-lg text-sm transition-colors ${isActive ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`;
+                btn.innerText = chat.title;
+                btn.onclick = () => loadChat(chat.id);
+                chatList.appendChild(btn);
+            });
+        }
+
+        function loadChat(chatId) {
+            state.currentChatId = chatId;
+            renderSidebar();
+            renderMessages();
+            
+            // On mobile, close sidebar after selection
+            const sidebar = document.getElementById('sidebar');
+            if(sidebar.classList.contains('absolute')) {
+                toggleSidebar();
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesContainer');
+            const emptyState = document.getElementById('emptyState');
+            const chat = state.chats.find(c => c.id === state.currentChatId);
+            
+            container.innerHTML = '';
+            
+            if (!chat || chat.messages.length === 0) {
+                container.appendChild(emptyState);
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+
+            chat.messages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `flex gap-4 mb-6 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
+                
+                let avatar = '';
+                if (msg.role === 'user') {
+                    avatar = `<div class="w-8 h-8 rounded-full bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold mt-1">${state.profile.name.charAt(0).toUpperCase()}</div>`;
+                } else {
+                    avatar = `<div class="w-8 h-8 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-sm font-bold mt-1"><i class="fa-solid fa-robot"></i></div>`;
+                }
+
+                // Render Markdown securely
+                const rawHtml = marked.parse(msg.content);
+                const safeHtml = DOMPurify.sanitize(rawHtml);
+
+                const contentClass = msg.role === 'user' ? 'bg-gray-800 px-4 py-3 rounded-2xl rounded-tr-sm max-w-[85%]' : 'prose prose-invert max-w-full';
+
+                msgDiv.innerHTML = `
+                    ${msg.role === 'assistant' ? avatar : ''}
+                    <div class="${contentClass} text-sm leading-relaxed overflow-x-auto">
+                        ${safeHtml}
+                    </div>
+                    ${msg.role === 'user' ? avatar : ''}
+                `;
+                
+                container.appendChild(msgDiv);
+            });
+
+            // Auto scroll to bottom
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            const btn = document.getElementById('sendBtn');
+            
+            if (!text || !state.currentChatId) return;
+            
+            if (!state.settings.apiKey) {
+                alert("Please click settings (bottom left) and add an OpenRouter API key to access free decentralized models.");
+                return;
+            }
+
+            // UI Updates
+            input.value = '';
+            input.style.height = 'auto';
+            btn.disabled = true;
+
+            const chat = state.chats.find(c => c.id === state.currentChatId);
+            
+            // Set title if it's the first message
+            if (chat.messages.length === 0) {
+                chat.title = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+                renderSidebar();
+            }
+
+            // Push User Message
+            chat.messages.push({ role: 'user', content: text });
+            saveData();
+            renderMessages();
+
+            // Show Loading Indicator
+            const container = document.getElementById('messagesContainer');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loadingIndicator';
+            loadingDiv.className = 'flex gap-4 mb-6 justify-start';
+            loadingDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-emerald-600 flex-shrink-0 flex items-center justify-center text-sm font-bold mt-1"><i class="fa-solid fa-robot"></i></div>
+                <div class="h-8 w-16 relative loader-dots">
+                    <div class="absolute top-3 w-2 h-2 rounded-full bg-gray-500"></div>
+                    <div class="absolute top-3 w-2 h-2 rounded-full bg-gray-500"></div>
+                    <div class="absolute top-3 w-2 h-2 rounded-full bg-gray-500"></div>
+                    <div class="absolute top-3 w-2 h-2 rounded-full bg-gray-500"></div>
+                </div>
+            `;
+            container.appendChild(loadingDiv);
+            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+
+            // Prepare API Call Context (System prompt + History)
+            const apiMessages = [
+                { role: "system", content: "You are an intelligent, helpful AI assistant running on a decentralized Inbondz interface." },
+                ...chat.messages.map(m => ({ role: m.role, content: m.content }))
+            ];
+
+            try {
+                // Call OpenRouter API (Access to free decentralized models)
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${state.settings.apiKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        "model": state.settings.model,
+                        "messages": apiMessages
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error?.message || 'Failed to fetch response');
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+
+                // Push AI Message
+                chat.messages.push({ role: 'assistant', content: aiResponse });
+                saveData();
+
+            } catch (error) {
+                console.error(error);
+                chat.messages.push({ role: 'assistant', content: `**Error:** ${error.message}\n\nPlease ensure your API key is valid and you have internet access.` });
+                saveData();
+            } finally {
+                btn.disabled = false;
+                renderMessages();
+            }
+        }
+
+        /* --- SETTINGS --- */
+        function openSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettingsAndClose() {
+            saveSettings();
+            closeSettings();
+        }
+
+        function saveSettings() {
+            state.settings.apiKey = document.getElementById('apiKeyInput').value.trim();
+            state.settings.model = document.getElementById('modelSelect').value;
+            saveData();
+        }
+    </script>
+</body>
+</html>
