@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inbondz | Mesh Network & AI</title>
+    <title>Inbondz | Decentralized P2P Chat</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,98 +14,138 @@
         }
     </script>
 
-    <!-- FontAwesome, Marked, DOMPurify & Gun.js (P2P Network) -->
+    <!-- FontAwesome, DOMPurify, Ethers.js, and Gun.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 
     <style>
-        /* Mobile viewport 100dvh fix */
         html, body { height: 100%; height: 100dvh; overflow: hidden; }
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
         
-        .prose pre { background-color: #030712; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; margin-bottom: 0.5rem;}
-        .prose code { color: #818cf8; font-family: monospace; }
-        .prose p { margin-bottom: 0.25rem; }
+        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(31, 41, 55, 1); }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 flex h-[100dvh] w-screen overflow-hidden font-sans">
 
+    <!-- AUTHENTICATION / SETUP SCREEN -->
+    <div id="authScreen" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="max-w-sm w-full bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-800 text-center">
+            <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
+                <i class="fa-solid fa-link text-3xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">P2P</span></h1>
+            <p id="authSubtitle" class="text-xs text-gray-400 mb-8">Decentralized Wallet Identity</p>
+            
+            <!-- Create Account -->
+            <div id="createSection" class="space-y-4">
+                <div class="text-left">
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Claim a unique Handle</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-gray-500 font-bold">@</span>
+                        <input type="text" id="newHandleInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-700" placeholder="username" autocomplete="off">
+                    </div>
+                </div>
+                <button onclick="createNewAccount()" id="createBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition active:scale-95">
+                    Generate Identity & Enter
+                </button>
+                <div class="pt-4 border-t border-gray-800 mt-6">
+                    <button onclick="toggleRestore()" class="text-xs text-gray-400 hover:text-white transition">Have a 12-word recovery key? Restore here.</button>
+                </div>
+            </div>
+
+            <!-- Restore Account -->
+            <div id="restoreSection" class="space-y-4 hidden text-left">
+                <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Paste 12-Word Private Key</label>
+                <textarea id="restoreSeedInput" rows="3" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-700" placeholder="alpha bravo charlie..."></textarea>
+                
+                <div class="flex gap-2">
+                    <button onclick="toggleRestore()" class="bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium py-3 px-4 rounded-xl transition">Back</button>
+                    <button onclick="restoreAccount()" id="restoreBtn" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-medium py-3 px-4 rounded-xl transition">
+                        Decrypt & Restore
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SIDEBAR OVERLAY (Mobile) -->
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/70 z-20 hidden md:hidden"></div>
 
-    <!-- SIDEBAR -->
-    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-gray-900 border-r border-gray-800 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
+    <!-- SIDEBAR (Chat List & Search) -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 sm:w-80 bg-gray-900 border-r border-gray-800 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
         
-        <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-            <h1 class="text-lg font-bold tracking-widest text-white">INBONDZ</h1>
-            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <!-- Search Bar -->
+        <div class="p-4 border-b border-gray-800 bg-gray-950">
+            <h2 class="text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">Find Users</h2>
+            <div class="flex gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute left-3 top-2 text-gray-500 font-bold text-sm">@</span>
+                    <input type="text" id="searchInput" class="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-7 pr-3 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-600" placeholder="search handle" autocomplete="off" onkeydown="if(event.key==='Enter') searchUser()">
+                </div>
+                <button onclick="searchUser()" id="searchBtn" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-4 transition flex-shrink-0">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </button>
+            </div>
         </div>
         
-        <div class="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase mt-2">Network Channels</div>
+        <div class="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase mt-2">Active Connections</div>
         
-        <!-- Channels -->
-        <div class="flex-1 overflow-y-auto px-3 space-y-2">
-            <button onclick="switchChannel('global')" id="btn-global" class="w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl text-sm font-medium transition bg-gray-800 text-white border border-gray-700">
-                <i class="fa-solid fa-earth-americas text-emerald-400"></i>
-                <div class="flex-1">
-                    <p>Global P2P Mesh</p>
-                    <p class="text-[10px] text-gray-400 font-normal">Human Chat Room</p>
-                </div>
-            </button>
-
-            <button onclick="switchChannel('ai')" id="btn-ai" class="w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl text-sm font-medium transition text-gray-400 hover:bg-gray-850 hover:text-gray-200 border border-transparent">
-                <i class="fa-solid fa-microchip text-blue-400"></i>
-                <div class="flex-1">
-                    <p>Inbondz AI</p>
-                    <p class="text-[10px] text-gray-400 font-normal">Private Assistant</p>
-                </div>
-            </button>
+        <!-- Dynamic Chat List -->
+        <div id="chatList" class="flex-1 overflow-y-auto px-3 space-y-1">
+            <!-- Chats injected here -->
         </div>
 
         <!-- User Profile Bottom Bar -->
-        <div class="p-3 border-t border-gray-800 flex items-center justify-between bg-gray-900/80 cursor-pointer hover:bg-gray-800 transition" onclick="openSettings()">
+        <div class="p-3 border-t border-gray-800 flex items-center justify-between bg-gray-900 hover:bg-gray-850 cursor-pointer transition" onclick="openSettings()">
             <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-9 h-9 rounded-full bg-blue-600/30 border border-blue-500/50 text-blue-400 flex items-center justify-center text-sm font-bold flex-shrink-0" id="userAvatar">A</div>
+                <div class="w-9 h-9 rounded-full bg-blue-600/20 border border-blue-500/50 text-blue-400 flex items-center justify-center text-sm font-bold flex-shrink-0" id="myAvatar">U</div>
                 <div class="min-w-0 flex-1">
-                    <p class="text-sm font-semibold truncate text-white" id="displayNameText">Anon</p>
-                    <p class="text-[10px] text-emerald-400 truncate"><i class="fa-solid fa-circle text-[6px] mr-1"></i> Identity Secured</p>
+                    <p class="text-sm font-semibold truncate text-white" id="myHandleText">@loading</p>
+                    <p class="text-[10px] text-gray-500 truncate font-mono" id="myAddressText">0x00...000</p>
                 </div>
             </div>
-            <i class="fa-solid fa-gear text-gray-400 text-sm p-2"></i>
+            <i class="fa-solid fa-gear text-gray-400 p-2 hover:text-white transition"></i>
         </div>
     </aside>
 
     <!-- MAIN CHAT AREA -->
     <main class="flex-1 flex flex-col h-full w-full bg-gray-950 relative overflow-hidden">
         
-        <header class="h-14 border-b border-gray-800/80 bg-gray-900/60 backdrop-blur-md flex items-center justify-between px-4 z-10 flex-shrink-0">
+        <header class="h-14 glass-panel flex items-center justify-between px-4 z-10 flex-shrink-0">
             <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 mr-2">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 mr-1">
                     <i class="fa-solid fa-bars text-lg"></i>
                 </button>
-                <h2 id="channelTitle" class="text-sm font-bold text-gray-200">Global P2P Mesh</h2>
-            </div>
-            <div id="channelStatus" class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Live Sync</span>
+                <div id="chatHeader" class="hidden flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 text-gray-300 flex items-center justify-center text-xs font-bold" id="chatHeaderAvatar">U</div>
+                    <div>
+                        <h2 id="chatHeaderName" class="text-sm font-bold text-gray-200 leading-tight">@username</h2>
+                        <p class="text-[10px] text-emerald-500 font-medium tracking-wide"><i class="fa-solid fa-lock text-[8px] mr-0.5"></i> E2E P2P Mesh</p>
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- Messages Container -->
-        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 pb-28">
-            <!-- Messages injected here via JS -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 pb-28 flex flex-col">
+            <!-- Empty State -->
+            <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4 m-auto">
+                <i class="fa-solid fa-network-wired text-4xl mb-4 text-blue-500/30"></i>
+                <h2 class="text-base font-medium text-gray-300 mb-1">Decentralized Transport Layer</h2>
+                <p class="text-xs text-gray-500 max-w-sm">Search for a user's handle in the sidebar to initiate a direct peer-to-peer connection. Messages are pulled from the network, not local storage.</p>
+            </div>
         </div>
 
-        <!-- Input Area -->
+        <!-- Fixed Input Area -->
         <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
             <div class="max-w-4xl mx-auto flex items-end bg-gray-900 border border-gray-700 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-500 transition-colors">
-                <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2.5 focus:outline-none resize-none max-h-32" placeholder="Send a message..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
-                <button id="sendBtn" onclick="sendMessage()" class="w-10 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40 ml-1">
-                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                <textarea id="messageInput" disabled rows="1" class="flex-1 bg-transparent text-sm text-white px-4 py-3 focus:outline-none resize-none max-h-32 disabled:opacity-50" placeholder="Select a chat to send message..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                <button id="sendBtn" disabled onclick="sendMessage()" class="w-11 h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 ml-1 disabled:opacity-30">
+                    <i class="fa-solid fa-arrow-up text-sm"></i>
                 </button>
             </div>
         </div>
@@ -114,42 +153,33 @@
 
     <!-- SETTINGS MODAL -->
     <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-gray-900 w-full max-w-sm rounded-2xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-                <h2 class="text-sm font-bold tracking-wide">Identity Settings</h2>
-                <button onclick="closeSettings()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+        <div class="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-950">
+                <h2 class="text-sm font-bold tracking-wide">Wallet Settings</h2>
+                <button onclick="closeSettings()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
-            <div class="p-5 space-y-5">
-                <!-- Display Name -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Public Display Name (For Global Chat)</label>
-                    <input type="text" id="displayNameInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="e.g. Neo">
+            <div class="p-6 space-y-6">
+                <!-- Profile Read Only Info -->
+                <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800 text-center">
+                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Your Registered Handle</p>
+                    <p class="text-lg font-bold text-white mb-3" id="settingsHandle">@loading</p>
+                    
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">Public Address</p>
+                    <p class="text-[10px] font-mono text-gray-400 break-all select-all bg-gray-900 p-2 rounded-lg border border-gray-800" id="settingsAddress">0x...</p>
                 </div>
 
-                <hr class="border-gray-800">
-
-                <!-- Biometric Copy Passphrase -->
+                <!-- Strict Biometric Copy -->
                 <div>
-                    <p class="text-xs font-medium text-gray-400 mb-2">Recovery Passphrase (Never shown on screen)</p>
-                    <button onclick="copyPassphraseBiometric()" id="biometricCopyBtn" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white text-sm font-medium py-3 rounded-xl transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-fingerprint text-blue-400"></i> Verify Biometric to Copy
+                    <button onclick="copyPasskeyBiometric()" id="biometricCopyBtn" class="w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-medium py-3.5 rounded-2xl transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-fingerprint text-lg"></i> Backup Private Key
                     </button>
-                    <p class="text-[10px] text-gray-500 text-center mt-2">Requires TouchID, FaceID, or Device PIN to copy.</p>
-                </div>
-
-                <!-- Restore Account -->
-                <div class="pt-2 border-t border-gray-800">
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5">Restore Account</label>
-                    <div class="flex gap-2">
-                        <input type="text" id="restoreInput" class="flex-1 bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="Paste 12 words here...">
-                        <button onclick="restoreAccount()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium px-4 rounded-xl transition">Restore</button>
-                    </div>
+                    <p class="text-[10px] text-gray-500 text-center mt-2.5 leading-relaxed">Requires TouchID, FaceID, or Device PIN to copy.<br>The 12 words will <b>never</b> be rendered on screen.</p>
                 </div>
 
                 <div class="pt-2">
-                    <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-3 rounded-xl transition shadow-lg shadow-blue-600/20">
-                        Save Profile
+                    <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 border border-red-500/20 text-xs font-medium py-3 rounded-xl transition">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sign Out Device
                     </button>
                 </div>
             </div>
@@ -157,47 +187,131 @@
     </div>
 
     <script>
-        // --- 1. STATE & IDENTITY INITIALIZATION ---
-        const WORD_LIST = ["alpha","bravo","charlie","delta","echo","foxtrot","golf","hotel","india","juliet","kilo","lima","mike","november","oscar","papa","quebec","romeo","sierra","tango","uniform","victor","whiskey","xray","yankee","zulu","quantum","node","block","chain","hash","cipher","pulse","grid","mesh"];
-        
-        let state = {
-            channel: 'global', // 'global' or 'ai'
-            displayName: 'Anon-' + Math.floor(Math.random() * 9999),
-            passphrase: '',
-            aiHistory: JSON.parse(localStorage.getItem('inbondz_ai_history') || '[]')
-        };
+        // --- 1. DECENTRALIZED INFRASTRUCTURE SETUP ---
+        // Using Gun.js as the peer-to-peer transport layer for Web3 messaging
+        const peers = ['https://gun-manhattan.herokuapp.com/gun'];
+        const gun = Gun(peers);
 
-        // Gun.js Initialization (Connects to free community P2P relay)
-        const gun = Gun(['https://gun-manhattan.herokuapp.com/gun']);
-        const globalChatNode = gun.get('inbondz_global_mesh_2026_v2');
+        let state = {
+            wallet: null,
+            handle: null,
+            activeChatAddr: null,
+            activeChatHandle: null,
+            chatListMap: new Set()
+        };
 
         window.onload = () => {
-            initIdentity();
-            updateProfileUI();
-            switchChannel('global'); // Default to global chat
+            const seed = localStorage.getItem('inbondz_seed');
+            if (seed) {
+                try {
+                    state.wallet = ethers.Wallet.fromPhrase(seed);
+                    // Fetch Handle from network
+                    gun.get('inbondz_addresses').get(state.wallet.address).once((handle) => {
+                        if (handle) {
+                            state.handle = handle;
+                            startApp();
+                        } else {
+                            // Rare edge case: Wallet exists but handle wasn't synced. Force recreate UI.
+                            document.getElementById('authScreen').classList.remove('hidden');
+                        }
+                    });
+                } catch(e) {
+                    localStorage.removeItem('inbondz_seed');
+                    document.getElementById('authScreen').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('authScreen').classList.remove('hidden');
+            }
         };
 
-        function initIdentity() {
-            let savedName = localStorage.getItem('inbondz_name');
-            let savedPhrase = localStorage.getItem('inbondz_phrase');
-            
-            if (!savedPhrase) {
-                // Instantly generate invisible identity on first load
-                let phraseArr = [];
-                for(let i=0; i<12; i++) phraseArr.push(WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)]);
-                savedPhrase = phraseArr.join(' ');
-                savedName = state.displayName; // Use the generated Anon name
-                
-                localStorage.setItem('inbondz_phrase', savedPhrase);
-                localStorage.setItem('inbondz_name', savedName);
-            }
-
-            state.passphrase = savedPhrase;
-            state.displayName = savedName;
+        // --- 2. IDENTITY GENERATION & RESTORE ---
+        function toggleRestore() {
+            document.getElementById('createSection').classList.toggle('hidden');
+            document.getElementById('restoreSection').classList.toggle('hidden');
+            document.getElementById('authSubtitle').innerText = document.getElementById('createSection').classList.contains('hidden') 
+                ? 'Restore using your 12-word seed phrase' 
+                : 'Decentralized Wallet Identity';
         }
 
-        // --- 2. BIOMETRIC CLIPBOARD COPY (Strict Rule Adherence) ---
-        async function copyPassphraseBiometric() {
+        async function createNewAccount() {
+            const handle = document.getElementById('newHandleInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+            if (!handle || handle.length < 3) return alert("Handle must be at least 3 alphanumeric characters.");
+            
+            const btn = document.getElementById('createBtn');
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating Keys...';
+            btn.disabled = true;
+
+            // Check if handle is taken on the mesh
+            gun.get('inbondz_users').get(handle).once((exists) => {
+                if (exists) {
+                    alert("This Handle is already taken on the network.");
+                    btn.innerHTML = 'Generate Identity & Enter';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Generate secure Ethers wallet
+                const wallet = ethers.Wallet.createRandom();
+                const seed = wallet.mnemonic.phrase;
+                
+                // Register to Mesh
+                gun.get('inbondz_users').get(handle).put(wallet.address);
+                gun.get('inbondz_addresses').get(wallet.address).put(handle);
+                
+                localStorage.setItem('inbondz_seed', seed);
+                state.wallet = wallet;
+                state.handle = handle;
+                
+                startApp();
+            });
+        }
+
+        function restoreAccount() {
+            const seed = document.getElementById('restoreSeedInput').value.trim();
+            const btn = document.getElementById('restoreBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Mesh...';
+            
+            try {
+                const wallet = ethers.Wallet.fromPhrase(seed);
+                gun.get('inbondz_addresses').get(wallet.address).once((handle) => {
+                    if (handle) {
+                        localStorage.setItem('inbondz_seed', seed);
+                        location.reload();
+                    } else {
+                        alert("Account verified on blockchain, but no Handle was registered on this mesh.");
+                        btn.innerHTML = 'Decrypt & Restore';
+                    }
+                });
+            } catch (e) {
+                alert("Invalid 12-word private key format.");
+                btn.innerHTML = 'Decrypt & Restore';
+            }
+        }
+
+        // --- 3. UI INITIALIZATION & SYNC ---
+        function startApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            
+            document.getElementById('myHandleText').innerText = '@' + state.handle;
+            document.getElementById('myAvatar').innerText = state.handle.charAt(0).toUpperCase();
+            document.getElementById('myAddressText').innerText = state.wallet.address.substring(0, 8) + '...' + state.wallet.address.substring(34);
+            
+            document.getElementById('settingsHandle').innerText = '@' + state.handle;
+            document.getElementById('settingsAddress').innerText = state.wallet.address;
+
+            // Subscribe to my chat list on the mesh
+            gun.get('inbondz_active_chats').get(state.wallet.address).map().on((timestamp, partnerAddr) => {
+                if (partnerAddr && !state.chatListMap.has(partnerAddr)) {
+                    state.chatListMap.add(partnerAddr);
+                    gun.get('inbondz_addresses').get(partnerAddr).once((partnerHandle) => {
+                        if(partnerHandle) renderSidebarChat(partnerAddr, partnerHandle);
+                    });
+                }
+            });
+        }
+
+        // --- 4. STRICT BIOMETRIC COPY (No rendering on screen) ---
+        async function copyPasskeyBiometric() {
             const btn = document.getElementById('biometricCopyBtn');
             const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
@@ -205,12 +319,10 @@
             try {
                 // Force platform biometric prompt (TouchID/FaceID)
                 if (window.PublicKeyCredential && window.location.protocol === 'https:') {
-                    const challenge = new Uint8Array(32);
-                    window.crypto.getRandomValues(challenge);
-                    
+                    const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
                     await navigator.credentials.create({
                         publicKey: {
-                            challenge: challenge,
+                            challenge,
                             rp: { name: "Inbondz", id: window.location.hostname },
                             user: { id: new Uint8Array(16), name: "user", displayName: "User" },
                             pubKeyCredParams: [{ type: "public-key", alg: -7 }],
@@ -220,241 +332,204 @@
                     });
                 }
                 
-                // Success: Write to clipboard silently. NEVER render on screen.
-                await navigator.clipboard.writeText(state.passphrase);
-                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i> Copied to Clipboard!';
-                btn.classList.replace('bg-gray-800', 'bg-green-900/30');
-                btn.classList.replace('border-gray-600', 'border-green-500/50');
+                // CRITICAL: Copied silently to clipboard. Never shown in UI.
+                await navigator.clipboard.writeText(localStorage.getItem('inbondz_seed'));
+                
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied to Clipboard!';
+                btn.classList.replace('text-blue-400', 'text-green-400');
+                btn.classList.replace('border-blue-500/30', 'border-green-500/50');
+                btn.classList.replace('bg-blue-600/10', 'bg-green-600/10');
                 
             } catch (err) {
-                // User cancelled or device has no biometric scanner
-                console.warn(err);
+                console.warn("Biometric failed/skipped:", err);
                 if (err.name === 'NotAllowedError') {
-                    btn.innerHTML = '<i class="fa-solid fa-xmark text-red-400"></i> Cancelled';
+                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Verification Cancelled';
+                    btn.classList.replace('text-blue-400', 'text-red-400');
                 } else {
-                    // Fallback for HTTP / Desktop without scanners: Just copy it.
-                    await navigator.clipboard.writeText(state.passphrase);
-                    btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Device Unsecured: Copied!';
+                    // Fallback for Desktop/HTTP without fingerprint scanners
+                    await navigator.clipboard.writeText(localStorage.getItem('inbondz_seed'));
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied! (No scanner detected)';
+                    btn.classList.replace('text-blue-400', 'text-emerald-400');
                 }
             }
 
-            // Reset button after 3 seconds
+            // Reset UI after 3 seconds
             setTimeout(() => { 
                 btn.innerHTML = originalHTML; 
-                btn.className = "w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white text-sm font-medium py-3 rounded-xl transition flex items-center justify-center gap-2";
+                btn.className = "w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-medium py-3.5 rounded-2xl transition flex items-center justify-center gap-2";
             }, 3000);
         }
 
-        // --- 3. UI & SETTINGS LOGIC ---
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('sidebarOverlay').classList.toggle('hidden');
-        }
-
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }
-
-        function handleEnter(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        }
-
-        function openSettings() {
-            document.getElementById('displayNameInput').value = state.displayName;
-            document.getElementById('settingsModal').classList.remove('hidden');
-        }
-        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-        function saveSettings() {
-            const newName = document.getElementById('displayNameInput').value.trim();
-            if(newName) {
-                state.displayName = newName;
-                localStorage.setItem('inbondz_name', newName);
-                updateProfileUI();
-            }
-            closeSettings();
-        }
-
-        function updateProfileUI() {
-            document.getElementById('displayNameText').innerText = state.displayName;
-            document.getElementById('userAvatar').innerText = state.displayName.charAt(0).toUpperCase();
-        }
-
-        function restoreAccount() {
-            const input = document.getElementById('restoreInput').value.trim();
-            if(input.split(' ').length > 5) { // Simple check
-                localStorage.setItem('inbondz_phrase', input);
-                alert("Account Restored! The page will now reload.");
-                location.reload();
-            } else {
-                alert("Invalid passphrase format.");
-            }
-        }
-
-        // --- 4. CHANNEL SWITCHING ---
-        function switchChannel(channelType) {
-            state.channel = channelType;
-            const container = document.getElementById('messagesContainer');
-            container.innerHTML = ''; // Clear current view
+        // --- 5. SEARCH & USER DISCOVERY ---
+        function searchUser() {
+            const q = document.getElementById('searchInput').value.trim().toLowerCase().replace('@', '');
+            if (!q) return;
+            if (q === state.handle) return alert("You cannot chat with yourself.");
             
-            // UI Button Updates
-            document.getElementById('btn-global').className = `w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl text-sm font-medium transition ${channelType === 'global' ? 'bg-gray-800 text-white border border-gray-700' : 'text-gray-400 hover:bg-gray-850 hover:text-gray-200 border border-transparent'}`;
-            document.getElementById('btn-ai').className = `w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl text-sm font-medium transition ${channelType === 'ai' ? 'bg-gray-800 text-white border border-gray-700' : 'text-gray-400 hover:bg-gray-850 hover:text-gray-200 border border-transparent'}`;
-
-            if(channelType === 'global') {
-                document.getElementById('channelTitle').innerText = "Global P2P Mesh";
-                document.getElementById('channelStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Live Sync</span>';
-                document.getElementById('messageInput').placeholder = "Message the global network...";
-                loadGlobalChat();
-            } else {
-                document.getElementById('channelTitle').innerText = "Inbondz AI";
-                document.getElementById('channelStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-blue-500"></span><span class="text-[10px] font-bold tracking-widest text-gray-400 uppercase">Private</span>';
-                document.getElementById('messageInput').placeholder = "Ask the AI anything...";
-                renderAIChat();
-            }
-
-            if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) toggleSidebar();
-        }
-
-        // --- 5. GLOBAL P2P CHAT LOGIC (Gun.js) ---
-        let globalChatLoaded = false;
-        function loadGlobalChat() {
-            if(!globalChatLoaded) {
-                // Listen for new messages across the P2P network
-                globalChatNode.map().once((data, id) => {
-                    if (data && data.text && state.channel === 'global') {
-                        renderSingleMessage(data.user, data.text, data.user === state.displayName, false);
-                    }
-                });
-                globalChatLoaded = true;
-            } else {
-                // Fetch recent from memory (Gun caches this automatically)
-                globalChatNode.map().once((data, id) => {
-                    if (data && data.text) renderSingleMessage(data.user, data.text, data.user === state.displayName, false);
-                });
-            }
-        }
-
-        // --- 6. AI CHAT LOGIC ---
-        function renderAIChat() {
-            const container = document.getElementById('messagesContainer');
-            container.innerHTML = '';
+            const btn = document.getElementById('searchBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
             
-            if(state.aiHistory.length === 0) {
-                container.innerHTML = `
-                <div class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4">
-                    <i class="fa-solid fa-microchip text-4xl mb-3 text-blue-500/40"></i>
-                    <h2 class="text-base font-medium text-gray-300">Inbondz AI Assistant</h2>
-                    <p class="text-xs text-gray-500 max-w-xs mt-1">This chat is stored locally. Free AI inferences provided via public routing.</p>
-                </div>`;
-                return;
-            }
-
-            state.aiHistory.forEach(msg => {
-                renderSingleMessage(msg.role === 'user' ? state.displayName : 'Inbondz AI', msg.text, msg.role === 'user', true);
+            gun.get('inbondz_users').get(q).once((addr) => {
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass text-xs"></i>';
+                if (addr) {
+                    document.getElementById('searchInput').value = '';
+                    
+                    // Add to both users' active chat lists on the mesh
+                    gun.get('inbondz_active_chats').get(state.wallet.address).get(addr).put(Date.now());
+                    gun.get('inbondz_active_chats').get(addr).get(state.wallet.address).put(Date.now());
+                    
+                    openChat(addr, q);
+                } else {
+                    alert("User not found on the network.");
+                }
             });
-            container.scrollTop = container.scrollHeight;
         }
 
-        // --- 7. MESSAGE RENDERING & SENDING ---
-        function renderSingleMessage(name, text, isMe, parseMarkdown) {
+        function renderSidebarChat(addr, handle) {
+            // Prevent duplicates in UI
+            if(document.getElementById(`sidebar-chat-${addr}`)) return;
+
+            const list = document.getElementById('chatList');
+            const btn = document.createElement('button');
+            btn.id = `sidebar-chat-${addr}`;
+            btn.className = `w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl transition border border-transparent text-gray-400 hover:bg-gray-850 hover:text-gray-200`;
+            btn.onclick = () => openChat(addr, handle);
+            
+            btn.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0">${handle.charAt(0).toUpperCase()}</div>
+                <div class="flex-1 truncate">
+                    <p class="text-sm font-medium truncate text-white">@${handle}</p>
+                    <p class="text-[10px] text-gray-500 font-mono truncate">${addr.substring(0,6)}...${addr.substring(38)}</p>
+                </div>
+            `;
+            list.appendChild(btn);
+        }
+
+        // --- 6. MESSAGING & DELETION (NO LOCAL STORAGE) ---
+        let currentChatSub = null;
+
+        function openChat(addr, handle) {
+            state.activeChatAddr = addr;
+            state.activeChatHandle = handle;
+            
+            // UI Updates
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('chatHeaderName').innerText = '@' + handle;
+            document.getElementById('chatHeaderAvatar').innerText = handle.charAt(0).toUpperCase();
+            
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            input.disabled = false; input.placeholder = "Send a secure message...";
+            sendBtn.disabled = false;
+
+            // Highlight Sidebar
+            document.querySelectorAll('#chatList button').forEach(b => {
+                b.classList.remove('bg-gray-800', 'border-gray-700', 'text-white');
+                b.classList.add('text-gray-400', 'border-transparent');
+            });
+            const activeBtn = document.getElementById(`sidebar-chat-${addr}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-gray-400', 'border-transparent');
+                activeBtn.classList.add('bg-gray-800', 'border-gray-700', 'text-white');
+            }
+            if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) toggleSidebar();
+
+            // Load Messages from the Mesh
             const container = document.getElementById('messagesContainer');
-            
-            // Remove empty state if present
-            const emptyState = container.querySelector('.h-full.flex-col');
-            if(emptyState) emptyState.remove();
+            container.innerHTML = ''; 
 
+            // Create unique deterministic chat ID by sorting addresses alphabetically
+            const chatId = [state.wallet.address, addr].sort().join('_');
+
+            // Turn off previous listener if switching chats
+            if (currentChatSub) gun.get('inbondz_msg_pool').get(currentChatSub).off();
+            currentChatSub = chatId;
+
+            // Real-time synchronization from network (NOT local storage)
+            gun.get('inbondz_msg_pool').get(chatId).map().on((msg, id) => {
+                if (msg === null) {
+                    // Message was deleted for everyone
+                    const el = document.getElementById('msg-' + id);
+                    if (el) el.remove();
+                    return;
+                }
+                if (msg && msg.text) {
+                    renderMessageBubble(id, msg);
+                }
+            });
+        }
+
+        function renderMessageBubble(msgId, msg) {
+            if (document.getElementById('msg-' + msgId)) return; // Prevent dupes
+
+            const container = document.getElementById('messagesContainer');
+            const isMe = msg.sender === state.wallet.address;
+            
             const div = document.createElement('div');
-            div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} mb-4`;
+            div.id = 'msg-' + msgId;
+            div.className = `flex group w-full ${isMe ? 'justify-end' : 'justify-start'} mb-4`;
             
-            // Name Tag
-            if (!isMe) {
-                const nameTag = document.createElement('span');
-                nameTag.className = `text-[10px] font-bold mb-1 ml-1 ${name === 'Inbondz AI' ? 'text-blue-400' : 'text-gray-500'}`;
-                nameTag.innerText = name;
-                div.appendChild(nameTag);
+            const safeText = DOMPurify.sanitize(msg.text); // Prevent XSS
+            
+            // Delete For Everyone Button (Only shows for your messages on hover)
+            let deleteBtn = '';
+            if (isMe) {
+                deleteBtn = `<button onclick="deleteMessage('${msgId}')" class="hidden group-hover:flex items-center justify-center w-8 text-gray-600 hover:text-red-400 transition" title="Delete for everyone"><i class="fa-solid fa-trash text-xs"></i></button>`;
             }
 
-            const bubble = document.createElement('div');
-            bubble.className = isMe 
-                ? 'bg-blue-600 text-white text-[13px] md:text-sm px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] break-words'
-                : 'bg-gray-900 border border-gray-800 text-gray-200 text-[13px] md:text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[90%] prose prose-invert break-words shadow-md';
-
-            // Safe HTML Parsing
-            let safeContent = DOMPurify.sanitize(text);
-            if(parseMarkdown && !isMe) {
-                safeContent = DOMPurify.sanitize(marked.parse(text));
-            }
+            div.innerHTML = `
+                ${isMe ? deleteBtn : ''}
+                <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-gray-800 border border-gray-700 text-gray-200'} text-sm px-4 py-2.5 rounded-2xl ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} max-w-[75%] break-words shadow-md">
+                    ${safeText}
+                </div>
+            `;
             
-            bubble.innerHTML = safeContent;
-            div.appendChild(bubble);
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
 
-        async function sendMessage() {
+        function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            const btn = document.getElementById('sendBtn');
-
-            if (!text) return;
+            if (!text || !state.activeChatAddr) return;
             
             input.value = ''; input.style.height = 'auto';
-            btn.disabled = true;
 
-            if (state.channel === 'global') {
-                // Send to Gun.js P2P Mesh
-                globalChatNode.set({ user: state.displayName, text: text, time: Date.now() });
-                btn.disabled = false;
-                // Note: It will render automatically because of the `globalChatNode.map().once` listener!
-            } 
-            else if (state.channel === 'ai') {
-                // 1. Render User Message
-                state.aiHistory.push({ role: 'user', text: text });
-                localStorage.setItem('inbondz_ai_history', JSON.stringify(state.aiHistory));
-                renderSingleMessage(state.displayName, text, true, false);
-
-                // 2. Render "Generating..." State
-                const container = document.getElementById('messagesContainer');
-                const genDiv = document.createElement('div');
-                genDiv.id = "ai-generating";
-                genDiv.className = `flex flex-col items-start mb-4`;
-                genDiv.innerHTML = `
-                    <span class="text-[10px] font-bold mb-1 ml-1 text-blue-400">Inbondz AI</span>
-                    <div class="bg-gray-900 border border-gray-800 text-gray-400 text-xs px-4 py-3 rounded-2xl rounded-tl-sm shadow-md flex items-center gap-2">
-                        <i class="fa-solid fa-circle-notch fa-spin text-blue-500"></i> Generating reply...
-                    </div>`;
-                container.appendChild(genDiv);
-                container.scrollTop = container.scrollHeight;
-
-                try {
-                    // Fetch from a robust, keyless open AI proxy. Using encodeURIComponent ensures questions aren't blocked by URL parsing errors.
-                    const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(text)}?model=openai`);
-                    
-                    if(!response.ok) throw new Error("API Limit Reached");
-                    
-                    const aiReply = await response.text();
-
-                    // Remove Generating State
-                    document.getElementById('ai-generating').remove();
-
-                    // Save and Render AI Reply
-                    state.aiHistory.push({ role: 'assistant', text: aiReply });
-                    localStorage.setItem('inbondz_ai_history', JSON.stringify(state.aiHistory));
-                    renderSingleMessage('Inbondz AI', aiReply, false, true);
-
-                } catch (err) {
-                    document.getElementById('ai-generating').remove();
-                    const errorMsg = "⚠️ **Network Overloaded.** The free AI proxy is currently rejecting requests (429). But the **Global P2P Mesh** in the sidebar is 100% online—go chat with real humans!";
-                    state.aiHistory.push({ role: 'assistant', text: errorMsg });
-                    localStorage.setItem('inbondz_ai_history', JSON.stringify(state.aiHistory));
-                    renderSingleMessage('Inbondz AI', errorMsg, false, true);
-                } finally {
-                    btn.disabled = false;
-                }
-            }
+            const chatId = [state.wallet.address, state.activeChatAddr].sort().join('_');
+            const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
+            
+            // Push to decentralized mesh network
+            gun.get('inbondz_msg_pool').get(chatId).get(msgId).put({
+                text: text,
+                sender: state.wallet.address,
+                timestamp: Date.now()
+            });
         }
+
+        // CRITICAL REQUIREMENT: Delete For Everyone
+        function deleteMessage(msgId) {
+            if(!confirm("Permanently delete this message for everyone?")) return;
+            const chatId = [state.wallet.address, state.activeChatAddr].sort().join('_');
+            // Putting 'null' instantly removes it from the mesh and updates both screens
+            gun.get('inbondz_msg_pool').get(chatId).get(msgId).put(null);
+        }
+
+        // --- 7. UTILS & EVENT LISTENERS ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        }
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+        
+        function logout() {
+            localStorage.removeItem('inbondz_seed');
+            location.reload();
+        }
+        function autoResize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+        function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
     </script>
 </body>
 </html>
+
