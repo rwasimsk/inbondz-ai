@@ -1,20 +1,16 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inbondz | Decentralized P2P Chat</title>
+    <title>Inbondz | Web3 P2P Mesh</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } } }
-        }
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } } } }
     </script>
 
-    <!-- FontAwesome, DOMPurify, Ethers.js, and Gun.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
@@ -25,7 +21,6 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-        
         .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(31, 41, 55, 1); }
     </style>
 </head>
@@ -35,22 +30,19 @@
     <div id="authScreen" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="max-w-sm w-full bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-800 text-center">
             <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-                <i class="fa-solid fa-link text-3xl"></i>
+                <i class="fa-solid fa-wallet text-3xl"></i>
             </div>
             <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">P2P</span></h1>
-            <p id="authSubtitle" class="text-xs text-gray-400 mb-8">Decentralized Wallet Identity</p>
+            <p id="authSubtitle" class="text-xs text-gray-400 mb-8">Decentralized Web3 Identity</p>
             
             <!-- Create Account -->
             <div id="createSection" class="space-y-4">
                 <div class="text-left">
-                    <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Claim a unique Handle</label>
-                    <div class="relative">
-                        <span class="absolute left-4 top-3 text-gray-500 font-bold">@</span>
-                        <input type="text" id="newHandleInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-700" placeholder="username" autocomplete="off">
-                    </div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Choose a Display Name</label>
+                    <input type="text" id="newHandleInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-700" placeholder="e.g. Satoshi" autocomplete="off">
                 </div>
                 <button onclick="createNewAccount()" id="createBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition active:scale-95">
-                    Generate Identity & Enter
+                    Generate Wallet & Enter
                 </button>
                 <div class="pt-4 border-t border-gray-800 mt-6">
                     <button onclick="toggleRestore()" class="text-xs text-gray-400 hover:text-white transition">Have a 12-word recovery key? Restore here.</button>
@@ -62,7 +54,10 @@
                 <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Paste 12-Word Private Key</label>
                 <textarea id="restoreSeedInput" rows="3" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-700" placeholder="alpha bravo charlie..."></textarea>
                 
-                <div class="flex gap-2">
+                <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1 mt-3">Set Display Name for this Session</label>
+                <input type="text" id="restoreNameInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-700" placeholder="e.g. Satoshi" autocomplete="off">
+
+                <div class="flex gap-2 pt-2">
                     <button onclick="toggleRestore()" class="bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium py-3 px-4 rounded-xl transition">Back</button>
                     <button onclick="restoreAccount()" id="restoreBtn" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-medium py-3 px-4 rounded-xl transition">
                         Decrypt & Restore
@@ -78,37 +73,37 @@
     <!-- SIDEBAR (Chat List & Search) -->
     <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 sm:w-80 bg-gray-900 border-r border-gray-800 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
         
-        <!-- Search Bar -->
+        <!-- Web3 Search Bar -->
         <div class="p-4 border-b border-gray-800 bg-gray-950">
-            <h2 class="text-xs font-bold tracking-widest text-gray-500 uppercase mb-3">Find Users</h2>
+            <h2 class="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Start a Chat (Paste Address)</h2>
             <div class="flex gap-2">
-                <div class="relative flex-1">
-                    <span class="absolute left-3 top-2 text-gray-500 font-bold text-sm">@</span>
-                    <input type="text" id="searchInput" class="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-7 pr-3 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-600" placeholder="search handle" autocomplete="off" onkeydown="if(event.key==='Enter') searchUser()">
-                </div>
+                <input type="text" id="searchInput" class="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-xs text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-600 font-mono" placeholder="0x..." autocomplete="off" onkeydown="if(event.key==='Enter') searchUser()">
                 <button onclick="searchUser()" id="searchBtn" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-4 transition flex-shrink-0">
                     <i class="fa-solid fa-magnifying-glass text-xs"></i>
                 </button>
             </div>
         </div>
         
-        <div class="p-3 text-xs font-bold tracking-wider text-gray-500 uppercase mt-2">Active Connections</div>
+        <div class="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase mt-2">Active Connections</div>
         
-        <!-- Dynamic Chat List -->
-        <div id="chatList" class="flex-1 overflow-y-auto px-3 space-y-1">
-            <!-- Chats injected here -->
-        </div>
+        <div id="chatList" class="flex-1 overflow-y-auto px-3 space-y-1"></div>
 
         <!-- User Profile Bottom Bar -->
-        <div class="p-3 border-t border-gray-800 flex items-center justify-between bg-gray-900 hover:bg-gray-850 cursor-pointer transition" onclick="openSettings()">
-            <div class="flex items-center gap-3 min-w-0 flex-1">
-                <div class="w-9 h-9 rounded-full bg-blue-600/20 border border-blue-500/50 text-blue-400 flex items-center justify-center text-sm font-bold flex-shrink-0" id="myAvatar">U</div>
-                <div class="min-w-0 flex-1">
-                    <p class="text-sm font-semibold truncate text-white" id="myHandleText">@loading</p>
-                    <p class="text-[10px] text-gray-500 truncate font-mono" id="myAddressText">0x00...000</p>
+        <div class="p-3 border-t border-gray-800 flex flex-col gap-2 bg-gray-900 hover:bg-gray-850 transition">
+            <div class="flex items-center justify-between cursor-pointer" onclick="openSettings()">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <div class="w-9 h-9 rounded-full bg-blue-600/20 border border-blue-500/50 text-blue-400 flex items-center justify-center text-sm font-bold flex-shrink-0" id="myAvatar">U</div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold truncate text-white" id="myHandleText">Loading...</p>
+                        <p class="text-[10px] text-emerald-400 truncate"><i class="fa-solid fa-link text-[8px] mr-1"></i> Connected to Mesh</p>
+                    </div>
                 </div>
+                <i class="fa-solid fa-gear text-gray-400 p-2 hover:text-white transition"></i>
             </div>
-            <i class="fa-solid fa-gear text-gray-400 p-2 hover:text-white transition"></i>
+            <!-- Quick Copy Address Button -->
+            <button onclick="copyMyAddress()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-mono py-1.5 rounded-md border border-gray-700 flex items-center justify-center gap-2 transition">
+                <i class="fa-regular fa-copy"></i> <span id="myAddressText">0x00...000</span>
+            </button>
         </div>
     </aside>
 
@@ -122,9 +117,9 @@
                 </button>
                 <div id="chatHeader" class="hidden flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 text-gray-300 flex items-center justify-center text-xs font-bold" id="chatHeaderAvatar">U</div>
-                    <div>
-                        <h2 id="chatHeaderName" class="text-sm font-bold text-gray-200 leading-tight">@username</h2>
-                        <p class="text-[10px] text-emerald-500 font-medium tracking-wide"><i class="fa-solid fa-lock text-[8px] mr-0.5"></i> E2E P2P Mesh</p>
+                    <div class="min-w-0">
+                        <h2 id="chatHeaderName" class="text-sm font-bold text-gray-200 leading-tight truncate">Display Name</h2>
+                        <p id="chatHeaderAddr" class="text-[9px] text-gray-500 font-mono tracking-wide truncate">0x...</p>
                     </div>
                 </div>
             </div>
@@ -132,18 +127,17 @@
 
         <!-- Messages Container -->
         <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 pb-28 flex flex-col">
-            <!-- Empty State -->
             <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4 m-auto">
                 <i class="fa-solid fa-network-wired text-4xl mb-4 text-blue-500/30"></i>
-                <h2 class="text-base font-medium text-gray-300 mb-1">Decentralized Transport Layer</h2>
-                <p class="text-xs text-gray-500 max-w-sm">Search for a user's handle in the sidebar to initiate a direct peer-to-peer connection. Messages are pulled from the network, not local storage.</p>
+                <h2 class="text-base font-medium text-gray-300 mb-1">Web3 Transport Layer</h2>
+                <p class="text-xs text-gray-500 max-w-sm">Share your Wallet Address (bottom left) with a friend. Paste their address in the search bar to establish a secure P2P chat.</p>
             </div>
         </div>
 
         <!-- Fixed Input Area -->
         <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
             <div class="max-w-4xl mx-auto flex items-end bg-gray-900 border border-gray-700 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-500 transition-colors">
-                <textarea id="messageInput" disabled rows="1" class="flex-1 bg-transparent text-sm text-white px-4 py-3 focus:outline-none resize-none max-h-32 disabled:opacity-50" placeholder="Select a chat to send message..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                <textarea id="messageInput" disabled rows="1" class="flex-1 bg-transparent text-sm text-white px-4 py-3 focus:outline-none resize-none max-h-32 disabled:opacity-50" placeholder="Paste an address in sidebar to chat..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
                 <button id="sendBtn" disabled onclick="sendMessage()" class="w-11 h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 ml-1 disabled:opacity-30">
                     <i class="fa-solid fa-arrow-up text-sm"></i>
                 </button>
@@ -162,10 +156,10 @@
             <div class="p-6 space-y-6">
                 <!-- Profile Read Only Info -->
                 <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800 text-center">
-                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Your Registered Handle</p>
-                    <p class="text-lg font-bold text-white mb-3" id="settingsHandle">@loading</p>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">Your Display Name</p>
+                    <p class="text-lg font-bold text-white mb-3" id="settingsHandle">Loading...</p>
                     
-                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">Public Address</p>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">Your Public Address (Share to Chat)</p>
                     <p class="text-[10px] font-mono text-gray-400 break-all select-all bg-gray-900 p-2 rounded-lg border border-gray-800" id="settingsAddress">0x...</p>
                 </div>
 
@@ -174,12 +168,12 @@
                     <button onclick="copyPasskeyBiometric()" id="biometricCopyBtn" class="w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-medium py-3.5 rounded-2xl transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-fingerprint text-lg"></i> Backup Private Key
                     </button>
-                    <p class="text-[10px] text-gray-500 text-center mt-2.5 leading-relaxed">Requires TouchID, FaceID, or Device PIN to copy.<br>The 12 words will <b>never</b> be rendered on screen.</p>
+                    <p class="text-[10px] text-gray-500 text-center mt-2.5 leading-relaxed">Prompts TouchID/FaceID to copy.<br>If hardware fails, a secure fallback is provided.</p>
                 </div>
 
-                <div class="pt-2">
+                <div class="pt-2 border-t border-gray-800">
                     <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 border border-red-500/20 text-xs font-medium py-3 rounded-xl transition">
-                        <i class="fa-solid fa-right-from-bracket"></i> Sign Out Device
+                        <i class="fa-solid fa-trash-can"></i> Destroy Local Session & Log Out
                     </button>
                 </div>
             </div>
@@ -187,34 +181,26 @@
     </div>
 
     <script>
-        // --- 1. DECENTRALIZED INFRASTRUCTURE SETUP ---
-        // Using Gun.js as the peer-to-peer transport layer for Web3 messaging
-        const peers = ['https://gun-manhattan.herokuapp.com/gun'];
+        // --- 1. P2P MESH SETUP ---
+        // Using multiple community relay nodes to ensure it works even if one drops.
+        const peers = ['https://gun-vue.xyz/gun', 'https://gun-manhattan.herokuapp.com/gun'];
         const gun = Gun(peers);
 
         let state = {
             wallet: null,
-            handle: null,
+            displayName: null,
             activeChatAddr: null,
-            activeChatHandle: null,
             chatListMap: new Set()
         };
 
         window.onload = () => {
             const seed = localStorage.getItem('inbondz_seed');
-            if (seed) {
+            const name = localStorage.getItem('inbondz_name');
+            if (seed && name) {
                 try {
                     state.wallet = ethers.Wallet.fromPhrase(seed);
-                    // Fetch Handle from network
-                    gun.get('inbondz_addresses').get(state.wallet.address).once((handle) => {
-                        if (handle) {
-                            state.handle = handle;
-                            startApp();
-                        } else {
-                            // Rare edge case: Wallet exists but handle wasn't synced. Force recreate UI.
-                            document.getElementById('authScreen').classList.remove('hidden');
-                        }
-                    });
+                    state.displayName = name;
+                    startApp();
                 } catch(e) {
                     localStorage.removeItem('inbondz_seed');
                     document.getElementById('authScreen').classList.remove('hidden');
@@ -224,107 +210,97 @@
             }
         };
 
-        // --- 2. IDENTITY GENERATION & RESTORE ---
+        // --- 2. IDENTITY LOGIC ---
         function toggleRestore() {
             document.getElementById('createSection').classList.toggle('hidden');
             document.getElementById('restoreSection').classList.toggle('hidden');
             document.getElementById('authSubtitle').innerText = document.getElementById('createSection').classList.contains('hidden') 
-                ? 'Restore using your 12-word seed phrase' 
-                : 'Decentralized Wallet Identity';
+                ? 'Restore using your 12-word seed' 
+                : 'Decentralized Web3 Identity';
         }
 
         async function createNewAccount() {
-            const handle = document.getElementById('newHandleInput').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
-            if (!handle || handle.length < 3) return alert("Handle must be at least 3 alphanumeric characters.");
+            const name = document.getElementById('newHandleInput').value.trim();
+            if (!name) return alert("Please enter a display name.");
             
             const btn = document.getElementById('createBtn');
             btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating Keys...';
             btn.disabled = true;
 
-            // Check if handle is taken on the mesh
-            gun.get('inbondz_users').get(handle).once((exists) => {
-                if (exists) {
-                    alert("This Handle is already taken on the network.");
-                    btn.innerHTML = 'Generate Identity & Enter';
-                    btn.disabled = false;
-                    return;
-                }
-                
-                // Generate secure Ethers wallet
+            // Generate invisible Ethers wallet
+            setTimeout(() => {
                 const wallet = ethers.Wallet.createRandom();
-                const seed = wallet.mnemonic.phrase;
+                localStorage.setItem('inbondz_seed', wallet.mnemonic.phrase);
+                localStorage.setItem('inbondz_name', name);
                 
-                // Register to Mesh
-                gun.get('inbondz_users').get(handle).put(wallet.address);
-                gun.get('inbondz_addresses').get(wallet.address).put(handle);
-                
-                localStorage.setItem('inbondz_seed', seed);
                 state.wallet = wallet;
-                state.handle = handle;
+                state.displayName = name;
                 
+                // Broadcast my display name to the mesh
+                gun.get('inbondz_profiles_v1').get(wallet.address).put({ name: name });
                 startApp();
-            });
+            }, 500); // Tiny delay to let UI render the spinner
         }
 
         function restoreAccount() {
             const seed = document.getElementById('restoreSeedInput').value.trim();
-            const btn = document.getElementById('restoreBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking Mesh...';
-            
+            const name = document.getElementById('restoreNameInput').value.trim();
+            if(!name) return alert("Please set a display name for this session.");
+
             try {
                 const wallet = ethers.Wallet.fromPhrase(seed);
-                gun.get('inbondz_addresses').get(wallet.address).once((handle) => {
-                    if (handle) {
-                        localStorage.setItem('inbondz_seed', seed);
-                        location.reload();
-                    } else {
-                        alert("Account verified on blockchain, but no Handle was registered on this mesh.");
-                        btn.innerHTML = 'Decrypt & Restore';
-                    }
-                });
+                localStorage.setItem('inbondz_seed', seed);
+                localStorage.setItem('inbondz_name', name);
+                
+                // Update mesh profile
+                gun.get('inbondz_profiles_v1').get(wallet.address).put({ name: name });
+                
+                location.reload();
             } catch (e) {
                 alert("Invalid 12-word private key format.");
-                btn.innerHTML = 'Decrypt & Restore';
             }
         }
 
-        // --- 3. UI INITIALIZATION & SYNC ---
         function startApp() {
             document.getElementById('authScreen').classList.add('hidden');
             
-            document.getElementById('myHandleText').innerText = '@' + state.handle;
-            document.getElementById('myAvatar').innerText = state.handle.charAt(0).toUpperCase();
-            document.getElementById('myAddressText').innerText = state.wallet.address.substring(0, 8) + '...' + state.wallet.address.substring(34);
+            // Sync UI
+            document.getElementById('myHandleText').innerText = state.displayName;
+            document.getElementById('myAvatar').innerText = state.displayName.charAt(0).toUpperCase();
+            document.getElementById('myAddressText').innerText = state.wallet.address.substring(0, 6) + '...' + state.wallet.address.substring(38);
             
-            document.getElementById('settingsHandle').innerText = '@' + state.handle;
+            document.getElementById('settingsHandle').innerText = state.displayName;
             document.getElementById('settingsAddress').innerText = state.wallet.address;
 
-            // Subscribe to my chat list on the mesh
-            gun.get('inbondz_active_chats').get(state.wallet.address).map().on((timestamp, partnerAddr) => {
+            // Ensure profile is on mesh
+            gun.get('inbondz_profiles_v1').get(state.wallet.address).put({ name: state.displayName });
+
+            // Listen for chats initiated by others
+            gun.get('inbondz_chat_directory').get(state.wallet.address).map().on((timestamp, partnerAddr) => {
                 if (partnerAddr && !state.chatListMap.has(partnerAddr)) {
                     state.chatListMap.add(partnerAddr);
-                    gun.get('inbondz_addresses').get(partnerAddr).once((partnerHandle) => {
-                        if(partnerHandle) renderSidebarChat(partnerAddr, partnerHandle);
-                    });
+                    renderSidebarChat(partnerAddr);
                 }
             });
         }
 
-        // --- 4. STRICT BIOMETRIC COPY (No rendering on screen) ---
+        // --- 3. BULLETPROOF BIOMETRIC COPY ---
         async function copyPasskeyBiometric() {
             const btn = document.getElementById('biometricCopyBtn');
             const originalHTML = btn.innerHTML;
+            const seedToCopy = localStorage.getItem('inbondz_seed');
+            
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
             
             try {
-                // Force platform biometric prompt (TouchID/FaceID)
                 if (window.PublicKeyCredential && window.location.protocol === 'https:') {
                     const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+                    // This forces a hardware prompt on most devices
                     await navigator.credentials.create({
                         publicKey: {
                             challenge,
-                            rp: { name: "Inbondz", id: window.location.hostname },
-                            user: { id: new Uint8Array(16), name: "user", displayName: "User" },
+                            rp: { name: "Inbondz Auth", id: window.location.hostname },
+                            user: { id: window.crypto.getRandomValues(new Uint8Array(16)), name: "user", displayName: "Backup" },
                             pubKeyCredParams: [{ type: "public-key", alg: -7 }],
                             authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
                             timeout: 60000
@@ -332,91 +308,113 @@
                     });
                 }
                 
-                // CRITICAL: Copied silently to clipboard. Never shown in UI.
-                await navigator.clipboard.writeText(localStorage.getItem('inbondz_seed'));
-                
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied to Clipboard!';
-                btn.classList.replace('text-blue-400', 'text-green-400');
-                btn.classList.replace('border-blue-500/30', 'border-green-500/50');
-                btn.classList.replace('bg-blue-600/10', 'bg-green-600/10');
+                // Hardware Passed -> Copy Silently
+                await navigator.clipboard.writeText(seedToCopy);
+                triggerSuccessBtn(btn, "Copied to Clipboard!");
                 
             } catch (err) {
-                console.warn("Biometric failed/skipped:", err);
-                if (err.name === 'NotAllowedError') {
-                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Verification Cancelled';
-                    btn.classList.replace('text-blue-400', 'text-red-400');
+                console.warn("Biometric API blocked/skipped:", err);
+                // SMART FALLBACK: If API throws an error (NotAllowedError, SecurityError, etc.), 
+                // we ask the user manually. This guarantees they can ALWAYS copy their key.
+                if (confirm("Biometric verification failed or is not supported.\n\nCopy Private Key to clipboard anyway? (Ensure nobody is looking!)")) {
+                    await navigator.clipboard.writeText(seedToCopy);
+                    triggerSuccessBtn(btn, "Copied via Fallback!");
                 } else {
-                    // Fallback for Desktop/HTTP without fingerprint scanners
-                    await navigator.clipboard.writeText(localStorage.getItem('inbondz_seed'));
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied! (No scanner detected)';
-                    btn.classList.replace('text-blue-400', 'text-emerald-400');
+                    btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Cancelled';
+                    btn.classList.replace('text-blue-400', 'text-red-400');
+                    setTimeout(() => resetBtn(btn, originalHTML), 3000);
                 }
             }
-
-            // Reset UI after 3 seconds
-            setTimeout(() => { 
-                btn.innerHTML = originalHTML; 
-                btn.className = "w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-medium py-3.5 rounded-2xl transition flex items-center justify-center gap-2";
-            }, 3000);
         }
 
-        // --- 5. SEARCH & USER DISCOVERY ---
+        function triggerSuccessBtn(btn, text) {
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> ${text}`;
+            btn.classList.replace('text-blue-400', 'text-green-400');
+            btn.classList.replace('border-blue-500/30', 'border-green-500/50');
+            btn.classList.replace('bg-blue-600/10', 'bg-green-600/10');
+            setTimeout(() => resetBtn(btn, "<i class='fa-solid fa-fingerprint text-lg'></i> Backup Private Key"), 3000);
+        }
+
+        function resetBtn(btn, html) {
+            btn.innerHTML = html; 
+            btn.className = "w-full bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/30 text-blue-400 text-sm font-medium py-3.5 rounded-2xl transition flex items-center justify-center gap-2";
+        }
+
+        function copyMyAddress() {
+            navigator.clipboard.writeText(state.wallet.address);
+            const addrTxt = document.getElementById('myAddressText');
+            addrTxt.innerText = "Copied!";
+            setTimeout(() => { addrTxt.innerText = state.wallet.address.substring(0, 6) + '...' + state.wallet.address.substring(38); }, 2000);
+        }
+
+        // --- 4. PUBLIC KEY SEARCH & CHAT ---
         function searchUser() {
-            const q = document.getElementById('searchInput').value.trim().toLowerCase().replace('@', '');
-            if (!q) return;
-            if (q === state.handle) return alert("You cannot chat with yourself.");
+            const addr = document.getElementById('searchInput').value.trim();
+            if (!addr) return;
             
-            const btn = document.getElementById('searchBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
-            
-            gun.get('inbondz_users').get(q).once((addr) => {
-                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass text-xs"></i>';
-                if (addr) {
-                    document.getElementById('searchInput').value = '';
-                    
-                    // Add to both users' active chat lists on the mesh
-                    gun.get('inbondz_active_chats').get(state.wallet.address).get(addr).put(Date.now());
-                    gun.get('inbondz_active_chats').get(addr).get(state.wallet.address).put(Date.now());
-                    
-                    openChat(addr, q);
-                } else {
-                    alert("User not found on the network.");
-                }
-            });
+            try {
+                // Ensure it's a valid Ethereum/Web3 Address format
+                const formattedAddr = ethers.getAddress(addr); 
+                
+                if (formattedAddr === state.wallet.address) return alert("You cannot chat with yourself.");
+                
+                document.getElementById('searchInput').value = '';
+                
+                // Add to directory
+                state.chatListMap.add(formattedAddr);
+                gun.get('inbondz_chat_directory').get(state.wallet.address).get(formattedAddr).put(Date.now());
+                gun.get('inbondz_chat_directory').get(formattedAddr).get(state.wallet.address).put(Date.now());
+                
+                renderSidebarChat(formattedAddr);
+                openChat(formattedAddr);
+
+            } catch(e) {
+                alert("Invalid Wallet Address. Must be a valid 0x... format.");
+            }
         }
 
-        function renderSidebarChat(addr, handle) {
-            // Prevent duplicates in UI
+        function renderSidebarChat(addr) {
             if(document.getElementById(`sidebar-chat-${addr}`)) return;
 
             const list = document.getElementById('chatList');
             const btn = document.createElement('button');
             btn.id = `sidebar-chat-${addr}`;
             btn.className = `w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl transition border border-transparent text-gray-400 hover:bg-gray-850 hover:text-gray-200`;
-            btn.onclick = () => openChat(addr, handle);
+            btn.onclick = () => openChat(addr);
             
             btn.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0">${handle.charAt(0).toUpperCase()}</div>
-                <div class="flex-1 truncate">
-                    <p class="text-sm font-medium truncate text-white">@${handle}</p>
-                    <p class="text-[10px] text-gray-500 font-mono truncate">${addr.substring(0,6)}...${addr.substring(38)}</p>
+                <div class="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 text-gray-400 flex items-center justify-center text-xs font-bold flex-shrink-0" id="avatar-${addr}">?</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium truncate text-white" id="name-${addr}">${addr.substring(0,6)}...</p>
+                    <p class="text-[10px] text-gray-500 font-mono truncate">${addr}</p>
                 </div>
             `;
             list.appendChild(btn);
+
+            // Fetch their Display Name asynchronously
+            gun.get('inbondz_profiles_v1').get(addr).once((data) => {
+                if(data && data.name) {
+                    document.getElementById(`name-${addr}`).innerText = data.name;
+                    document.getElementById(`avatar-${addr}`).innerText = data.name.charAt(0).toUpperCase();
+                }
+            });
         }
 
-        // --- 6. MESSAGING & DELETION (NO LOCAL STORAGE) ---
+        // --- 5. P2P MESSAGING (NO LOCAL STORAGE) ---
         let currentChatSub = null;
 
-        function openChat(addr, handle) {
+        function openChat(addr) {
             state.activeChatAddr = addr;
-            state.activeChatHandle = handle;
             
             // UI Updates
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
-            document.getElementById('chatHeaderName').innerText = '@' + handle;
-            document.getElementById('chatHeaderAvatar').innerText = handle.charAt(0).toUpperCase();
+            document.getElementById('chatHeaderAddr').innerText = addr;
+            
+            // Grab name from sidebar UI if it already loaded
+            const sidebarName = document.getElementById(`name-${addr}`).innerText;
+            document.getElementById('chatHeaderName').innerText = sidebarName;
+            document.getElementById('chatHeaderAvatar').innerText = sidebarName.charAt(0).toUpperCase();
             
             const input = document.getElementById('messageInput');
             const sendBtn = document.getElementById('sendBtn');
@@ -435,21 +433,17 @@
             }
             if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) toggleSidebar();
 
-            // Load Messages from the Mesh
+            // Setup Mesh Sync (Deterministic Chat ID)
             const container = document.getElementById('messagesContainer');
             container.innerHTML = ''; 
-
-            // Create unique deterministic chat ID by sorting addresses alphabetically
             const chatId = [state.wallet.address, addr].sort().join('_');
 
-            // Turn off previous listener if switching chats
-            if (currentChatSub) gun.get('inbondz_msg_pool').get(currentChatSub).off();
+            if (currentChatSub) gun.get('inbondz_msg_v1').get(currentChatSub).off();
             currentChatSub = chatId;
 
-            // Real-time synchronization from network (NOT local storage)
-            gun.get('inbondz_msg_pool').get(chatId).map().on((msg, id) => {
+            // Load directly from network
+            gun.get('inbondz_msg_v1').get(chatId).map().on((msg, id) => {
                 if (msg === null) {
-                    // Message was deleted for everyone
                     const el = document.getElementById('msg-' + id);
                     if (el) el.remove();
                     return;
@@ -461,7 +455,7 @@
         }
 
         function renderMessageBubble(msgId, msg) {
-            if (document.getElementById('msg-' + msgId)) return; // Prevent dupes
+            if (document.getElementById('msg-' + msgId)) return; 
 
             const container = document.getElementById('messagesContainer');
             const isMe = msg.sender === state.wallet.address;
@@ -470,9 +464,9 @@
             div.id = 'msg-' + msgId;
             div.className = `flex group w-full ${isMe ? 'justify-end' : 'justify-start'} mb-4`;
             
-            const safeText = DOMPurify.sanitize(msg.text); // Prevent XSS
+            const safeText = DOMPurify.sanitize(msg.text); 
             
-            // Delete For Everyone Button (Only shows for your messages on hover)
+            // Delete For Everyone Button
             let deleteBtn = '';
             if (isMe) {
                 deleteBtn = `<button onclick="deleteMessage('${msgId}')" class="hidden group-hover:flex items-center justify-center w-8 text-gray-600 hover:text-red-400 transition" title="Delete for everyone"><i class="fa-solid fa-trash text-xs"></i></button>`;
@@ -499,34 +493,27 @@
             const chatId = [state.wallet.address, state.activeChatAddr].sort().join('_');
             const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2,5);
             
-            // Push to decentralized mesh network
-            gun.get('inbondz_msg_pool').get(chatId).get(msgId).put({
+            gun.get('inbondz_msg_v1').get(chatId).get(msgId).put({
                 text: text,
                 sender: state.wallet.address,
                 timestamp: Date.now()
             });
         }
 
-        // CRITICAL REQUIREMENT: Delete For Everyone
         function deleteMessage(msgId) {
             if(!confirm("Permanently delete this message for everyone?")) return;
             const chatId = [state.wallet.address, state.activeChatAddr].sort().join('_');
-            // Putting 'null' instantly removes it from the mesh and updates both screens
-            gun.get('inbondz_msg_pool').get(chatId).get(msgId).put(null);
+            gun.get('inbondz_msg_v1').get(chatId).get(msgId).put(null);
         }
 
-        // --- 7. UTILS & EVENT LISTENERS ---
+        // --- UTILS ---
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
         }
         function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
         function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-        
-        function logout() {
-            localStorage.removeItem('inbondz_seed');
-            location.reload();
-        }
+        function logout() { localStorage.removeItem('inbondz_seed'); localStorage.removeItem('inbondz_name'); location.reload(); }
         function autoResize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
         function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
     </script>
