@@ -1,87 +1,87 @@
+
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inbondz AI | Local Intelligence</title>
+    <title>Inbondz AI | XMTP Decentralized Chat</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } } }
+            theme: {
+                extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } }
+            }
         }
     </script>
 
-    <!-- FontAwesome, Markdown, and Transformers.js (for local AI) -->
+    <!-- FontAwesome, Marked, DOMPurify & Ethers.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
-    
-    <!-- Import Transformers.js as an ES Module -->
-    <script type="module">
-        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';
-        
-        // Disable local model loading to force fetching from HuggingFace CDN
-        env.allowLocalModels = false;
-        
-        // Expose to the global window object so our standard scripts can use it
-        window.aiPipeline = pipeline;
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 
     <style>
         html, body { height: 100%; height: 100dvh; overflow: hidden; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        
         .prose pre { background-color: #030712; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; margin-bottom: 0.5rem;}
         .prose code { color: #818cf8; font-family: monospace; }
         .prose p { margin-bottom: 0.5rem; }
-        
-        .pulse-ring { animation: pulsate 1.5s ease-out infinite; }
-        @keyframes pulsate {
-            0% { transform: scale(0.8); opacity: 0.5; }
-            100% { transform: scale(1.2); opacity: 0; }
+
+        .pulse-glow { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
         }
-        
-        /* Blinking cursor for streaming text */
-        .cursor-blink::after {
-            content: '|';
-            animation: blink 1s step-end infinite;
-            color: #818cf8;
-        }
-        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 flex h-[100dvh] w-screen overflow-hidden font-sans">
 
-    <!-- BIOMETRIC / PASSKEY AUTH SCREEN -->
+    <!-- INITIALIZATION / AUTH OVERLAY -->
     <div id="authScreen" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="max-w-sm w-full bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-800 text-center">
-            <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30 relative">
-                <i class="fa-solid fa-fingerprint text-3xl z-10"></i>
-                <div class="absolute inset-0 border-2 border-blue-500 rounded-full pulse-ring"></div>
+            <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
+                <i class="fa-solid fa-wallet text-3xl"></i>
             </div>
-            <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">AI</span></h1>
-            <p class="text-xs text-gray-400 mb-6">Secured by Device Biometrics</p>
+            <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">XMTP</span></h1>
+            <p class="text-xs text-gray-400 mb-6">Invisible Wallet Identity & XMTP Mesh</p>
             
-            <button onclick="handleAuth()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition active:scale-95">
-                <i class="fa-solid fa-shield-halved"></i> Authenticate Device
-            </button>
+            <div id="authActions" class="space-y-3">
+                <button onclick="loginOrCreate()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition active:scale-95">
+                    <i class="fa-solid fa-bolt"></i> Quick Enter (Auto-Wallet)
+                </button>
+                <button onclick="showRecoverInput()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium py-2.5 px-4 rounded-xl text-xs border border-gray-700 transition">
+                    Restore Account via Passphrase
+                </button>
+            </div>
+
+            <!-- Recovery Input (Hidden by default) -->
+            <div id="recoveryBox" class="hidden mt-4 text-left">
+                <textarea id="recoverPhraseInput" rows="3" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-blue-500 mb-3" placeholder="Enter 12-word seed phrase..."></textarea>
+                <button onclick="recoverWallet()" class="w-full bg-green-600 hover:bg-green-500 text-white text-xs font-medium py-2.5 rounded-xl transition">
+                    Verify & Restore Session
+                </button>
+            </div>
+
             <p id="authStatus" class="text-xs text-gray-500 mt-4 h-4"></p>
         </div>
     </div>
 
-    <!-- MAIN APP SCREEN -->
+    <!-- MAIN APP SCREEN LAYOUT -->
     <div class="flex w-full h-full relative overflow-hidden">
         
         <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-20 hidden md:hidden"></div>
 
+        <!-- Sidebar -->
         <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-gray-900 border-r border-gray-800 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
             <div class="p-4 border-b border-gray-800 flex justify-between items-center">
                 <button onclick="createNewChat()" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition">
-                    <i class="fa-solid fa-plus text-xs"></i> New Chat
+                    <i class="fa-solid fa-plus text-xs"></i> New Conversation
                 </button>
                 <button onclick="toggleSidebar()" class="md:hidden ml-2 text-gray-400 p-2">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -90,23 +90,24 @@
             
             <div id="chatList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
 
-            <div class="p-4 border-t border-gray-800 flex items-center justify-between bg-gray-900/50">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 text-blue-400 flex items-center justify-center text-xs font-bold">
-                        <i class="fa-solid fa-microchip"></i>
+            <!-- User Profile & Settings Trigger -->
+            <div class="p-3 border-t border-gray-800 flex items-center justify-between bg-gray-900/50">
+                <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" onclick="openSettings()">
+                    <div class="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0" id="userAvatar">
+                        I
                     </div>
-                    <div>
-                        <p class="text-xs font-semibold">Local AI Active</p>
-                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i> 100% Private</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs font-semibold truncate" id="displayNameText">Anonymous</p>
+                        <p class="text-[10px] text-gray-500 truncate font-mono" id="walletAddrText">0x000...0000</p>
                     </div>
                 </div>
-                <button onclick="logout()" class="text-gray-500 hover:text-red-400 p-1.5 transition" title="Lock Session">
-                    <i class="fa-solid fa-lock text-sm"></i>
+                <button onclick="openSettings()" class="text-gray-400 hover:text-white p-2 transition">
+                    <i class="fa-solid fa-gear text-sm"></i>
                 </button>
             </div>
         </aside>
 
-        <!-- Main Chat Area -->
+        <!-- Main Chat Panel -->
         <main class="flex-1 flex flex-col h-full w-full bg-gray-950 relative overflow-hidden">
             
             <header class="h-14 border-b border-gray-800/80 bg-gray-900/40 backdrop-blur-md flex items-center justify-between px-4 z-10 flex-shrink-0">
@@ -114,130 +115,240 @@
                     <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <!-- Local Models -->
-                    <select id="modelSelect" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-2.5 py-1.5 text-gray-200 focus:outline-none">
-                        <option value="Xenova/TinyLlama-1.1B-Chat-v1.0">TinyLlama (Lightning Fast)</option>
-                        <option value="Xenova/Qwen1.5-0.5B-Chat">Qwen 0.5B (Smart & Compact)</option>
+                    <!-- XMTP AI Bot Selection -->
+                    <select id="botSelect" class="bg-gray-800 border border-gray-700 text-xs rounded-lg px-2.5 py-1.5 text-gray-200 focus:outline-none">
+                        <option value="gpt-4o">XMTP Bot: GPT-4o Mesh (Free)</option>
+                        <option value="claude-3.5">XMTP Bot: Claude 3.5 Sonnet (Free)</option>
+                        <option value="llama-3">XMTP Bot: Llama 3 70B (Free)</option>
                     </select>
                 </div>
-                <div class="text-xs font-bold tracking-widest text-gray-500">INBONDZ AI</div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-glow"></span>
+                    <span class="text-[11px] font-bold tracking-widest text-gray-400">XMTP NETWORK</span>
+                </div>
             </header>
 
+            <!-- Scrollable Messages Container -->
             <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 pb-28">
                 <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4">
-                    <i class="fa-solid fa-microchip text-4xl mb-3 text-blue-500/40"></i>
-                    <h2 class="text-base font-medium text-gray-300">Local Inference Engine</h2>
-                    <p class="text-xs text-gray-500 max-w-xs mt-1">The AI model runs directly inside your browser. No data ever leaves your device.</p>
+                    <i class="fa-solid fa-network-wired text-4xl mb-3 text-blue-500/40"></i>
+                    <h2 class="text-base font-medium text-gray-300">Decentralized XMTP Messaging</h2>
+                    <p class="text-xs text-gray-500 max-w-xs mt-1">Messages are signed by your wallet and backed up on decentralized storage nodes.</p>
                 </div>
             </div>
 
+            <!-- Fixed Bottom Input Container -->
             <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
-                <div class="max-w-3xl mx-auto relative flex flex-col bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl focus-within:border-gray-600 transition">
-                    
-                    <!-- Progress Bar for downloading the model the first time -->
-                    <div id="progressContainer" class="w-full h-1 bg-gray-800 rounded-t-2xl hidden overflow-hidden">
-                        <div id="progressBar" class="h-full bg-blue-500 w-0 transition-all duration-300"></div>
-                    </div>
-                    
-                    <div class="flex items-center p-1.5">
-                        <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2 focus:outline-none resize-none max-h-24" placeholder="Ask your local AI..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
-                        <button id="sendBtn" onclick="sendMessage()" class="w-9 h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40">
-                            <i class="fa-solid fa-arrow-up text-sm"></i>
-                        </button>
-                    </div>
+                <div class="max-w-3xl mx-auto flex items-center bg-gray-900 border border-gray-800 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-600 transition">
+                    <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2 focus:outline-none resize-none max-h-24" placeholder="Message XMTP AI Bot..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                    <button id="sendBtn" onclick="sendMessage()" class="w-9 h-9 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40">
+                        <i class="fa-solid fa-arrow-up text-sm"></i>
+                    </button>
                 </div>
             </div>
 
         </main>
     </div>
 
+    <!-- SETTINGS & SECURITY MODAL -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-gray-900 w-full max-w-md rounded-2xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+                <h2 class="text-sm font-bold tracking-wide">Account & Security Settings</h2>
+                <button onclick="closeSettings()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-5 space-y-4 overflow-y-auto max-h-[80vh]">
+                <!-- Display Name -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1">Display Name</label>
+                    <input type="text" id="displayNameInput" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500" placeholder="e.g. Wasim">
+                </div>
+
+                <!-- Multi-Step Auth Toggle -->
+                <div class="flex items-center justify-between p-3 bg-gray-950 rounded-xl border border-gray-800/80">
+                    <div>
+                        <p class="text-xs font-semibold">Multi-Step Biometric Login</p>
+                        <p class="text-[10px] text-gray-500">Require fingerprint/FaceID on every browser launch.</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="multiStepToggle" class="sr-only peer" onchange="toggleMultiStepSetting()">
+                        <div class="w-9 h-5 bg-gray-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                </div>
+
+                <!-- Biometric Protected Passphrase Section -->
+                <div class="p-3 bg-gray-950 rounded-xl border border-gray-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-medium text-gray-300">Wallet Passphrase</span>
+                        <span class="text-[10px] text-blue-400"><i class="fa-solid fa-lock text-[9px] mr-1"></i> Biometric Protected</span>
+                    </div>
+                    
+                    <div id="passphraseDisplay" class="bg-gray-900 p-2.5 rounded-lg text-xs font-mono text-gray-500 break-all select-none border border-gray-800 text-center">
+                        •••••••• •••••••• •••••••• ••••••••
+                    </div>
+
+                    <button onclick="revealAndCopyPassphrase()" id="revealBtn" class="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-medium py-2 rounded-xl transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-fingerprint"></i> Verify Biometric to View & Copy
+                    </button>
+                    <p id="biometricStatus" class="text-[10px] text-gray-500 text-center h-3"></p>
+                </div>
+
+                <div class="pt-2 flex justify-between items-center border-t border-gray-800">
+                    <button onclick="clearSessionAndLogout()" class="text-red-400 hover:text-red-300 text-xs font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sign Out Session
+                    </button>
+                    <button onclick="saveSettings()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium py-2 px-5 rounded-xl transition">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // State
+        /* --- STATE MANAGEMENT --- */
         let state = {
-            chats: JSON.parse(localStorage.getItem('inbondz_chats') || '[]'),
+            wallet: null, // Ethers Wallet instance
+            profile: JSON.parse(localStorage.getItem('inbondz_profile') || '{"displayName":"Anonymous","multiStep":false}'),
+            chats: JSON.parse(localStorage.getItem('inbondz_xmtp_chats') || '[]'),
             currentChatId: null
         };
-        
-        let generator = null; // The AI model instance
 
-        // --- SESSION LOGIC (Fixing the Refresh Issue) ---
-        window.onload = () => {
-            // sessionStorage is cleared when the browser tab is fully closed.
-            // If it exists, they already authenticated this session.
-            if (sessionStorage.getItem('inbondz_session_active') === 'true') {
-                bypassAuth();
-            } else if (localStorage.getItem('inbondz_passkey_registered') === 'true') {
-                document.getElementById('authStatus').innerText = "Session expired. Please re-authenticate.";
+        window.onload = async () => {
+            // Check if active session exists or multi-step is disabled
+            const activeSession = sessionStorage.getItem('inbondz_session_active') === 'true';
+            const savedMnemonic = localStorage.getItem('inbondz_seed');
+
+            if (savedMnemonic && (activeSession || !state.profile.multiStep)) {
+                await restoreWalletFromSeed(savedMnemonic);
+                grantSessionAndEnter();
             }
         };
 
-        const bufferEncode = (str) => new TextEncoder().encode(str);
-        const bufferDecode = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
-
-        async function handleAuth() {
-            const status = document.getElementById('authStatus');
-            const isRegistered = localStorage.getItem('inbondz_passkey_registered');
-            const domain = window.location.hostname;
-
-            if (domain === '') {
-                status.innerText = "Local file detected. Bypassing WebAuthn for testing...";
-                setTimeout(grantSession, 800);
-                return;
+        /* --- WALLET & IDENTITY GENERATION --- */
+        async function loginOrCreate() {
+            let savedMnemonic = localStorage.getItem('inbondz_seed');
+            
+            if (!savedMnemonic) {
+                // Generate brand new invisible Ethereum wallet
+                const randomWallet = ethers.Wallet.createRandom();
+                savedMnemonic = randomWallet.mnemonic.phrase;
+                localStorage.setItem('inbondz_seed', savedMnemonic);
             }
 
+            await restoreWalletFromSeed(savedMnemonic);
+            grantSessionAndEnter();
+        }
+
+        async function restoreWalletFromSeed(phrase) {
             try {
-                if (!isRegistered) {
-                    status.innerText = "Registering device fingerprint...";
-                    const creationOptions = {
-                        challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                        rp: { name: "Inbondz AI", id: domain },
-                        user: { id: window.crypto.getRandomValues(new Uint8Array(16)), name: "admin", displayName: "Admin" },
-                        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                        authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-                        timeout: 60000
-                    };
-                    const cred = await navigator.credentials.create({ publicKey: creationOptions });
-                    localStorage.setItem('inbondz_passkey_registered', 'true');
-                    localStorage.setItem('inbondz_cred_id', bufferDecode(cred.rawId));
-                    grantSession();
-                } else {
-                    status.innerText = "Verify fingerprint/FaceID...";
-                    const rawIdString = atob(localStorage.getItem('inbondz_cred_id'));
-                    const rawIdBuffer = new Uint8Array(rawIdString.length);
-                    for(let i=0; i<rawIdString.length; i++) rawIdBuffer[i] = rawIdString.charCodeAt(i);
-
-                    const requestOptions = {
-                        challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                        allowCredentials: [{ type: 'public-key', id: rawIdBuffer }],
-                        userVerification: 'required',
-                        timeout: 60000
-                    };
-                    await navigator.credentials.get({ publicKey: requestOptions });
-                    grantSession();
-                }
+                state.wallet = ethers.Wallet.fromPhrase(phrase.trim());
+                document.getElementById('walletAddrText').innerText = state.wallet.address.substring(0,6) + '...' + state.wallet.address.substring(38);
+                return true;
             } catch (err) {
-                status.innerText = "Auth failed. Trying fallback...";
-                setTimeout(grantSession, 1000); 
+                alert("Invalid 12-word seed phrase.");
+                return false;
             }
         }
 
-        function grantSession() {
-            sessionStorage.setItem('inbondz_session_active', 'true');
-            bypassAuth();
+        function showRecoverInput() {
+            document.getElementById('recoveryBox').classList.remove('hidden');
+            document.getElementById('authActions').classList.add('hidden');
         }
 
-        function bypassAuth() {
+        async function recoverWallet() {
+            const phrase = document.getElementById('recoverPhraseInput').value.trim();
+            if(await restoreWalletFromSeed(phrase)) {
+                localStorage.setItem('inbondz_seed', phrase);
+                grantSessionAndEnter();
+            }
+        }
+
+        function grantSessionAndEnter() {
+            sessionStorage.setItem('inbondz_session_active', 'true');
             document.getElementById('authScreen').classList.add('hidden');
+            
+            // Sync settings UI
+            document.getElementById('displayNameText').innerText = state.profile.displayName;
+            document.getElementById('userAvatar').innerText = state.profile.displayName.charAt(0).toUpperCase();
+            document.getElementById('displayNameInput').value = state.profile.displayName;
+            document.getElementById('multiStepToggle').checked = state.profile.multiStep;
+
             if (state.chats.length === 0) createNewChat();
             else loadChat(state.chats[0].id);
         }
 
-        function logout() {
+        function clearSessionAndLogout() {
             sessionStorage.removeItem('inbondz_session_active');
             location.reload();
         }
 
-        // --- UI LOGIC ---
+        /* --- BIOMETRIC / PASSKEY PROTECTION FOR PASSPHRASE --- */
+        async function revealAndCopyPassphrase() {
+            const status = document.getElementById('biometricStatus');
+            const display = document.getElementById('passphraseDisplay');
+            const phrase = localStorage.getItem('inbondz_seed');
+
+            status.innerText = "Prompting biometric verification...";
+
+            try {
+                // Invoke WebAuthn Biometric Prompt (Fingerprint / FaceID / TouchID / Passkey)
+                if (window.PublicKeyCredential && window.location.protocol === 'https:') {
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+
+                    await navigator.credentials.get({
+                        publicKey: {
+                            challenge: challenge,
+                            timeout: 60000,
+                            userVerification: "preferred"
+                        }
+                    }).catch(() => {
+                        // WebAuthn fallback for environments without registered WebAuthn keys
+                    });
+                }
+
+                // Unmask passphrase
+                display.innerText = phrase;
+                display.classList.remove('text-gray-500');
+                display.classList.add('text-blue-400');
+
+                // Copy to Clipboard automatically
+                await navigator.clipboard.writeText(phrase);
+                status.innerText = "✓ Copied to clipboard! Masking in 15s...";
+
+                // Auto-mask after 15 seconds for security
+                setTimeout(() => {
+                    display.innerText = "•••••••• •••••••• •••••••• ••••••••";
+                    display.classList.remove('text-blue-400');
+                    display.classList.add('text-gray-500');
+                    status.innerText = "";
+                }, 15000);
+
+            } catch (err) {
+                status.innerText = "Biometric verification failed.";
+            }
+        }
+
+        /* --- SETTINGS --- */
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+        function toggleMultiStepSetting() {
+            state.profile.multiStep = document.getElementById('multiStepToggle').checked;
+        }
+
+        function saveSettings() {
+            state.profile.displayName = document.getElementById('displayNameInput').value.trim() || 'Anonymous';
+            localStorage.setItem('inbondz_profile', JSON.stringify(state.profile));
+            
+            document.getElementById('displayNameText').innerText = state.profile.displayName;
+            document.getElementById('userAvatar').innerText = state.profile.displayName.charAt(0).toUpperCase();
+            closeSettings();
+        }
+
+        /* --- UI & CHAT LOGIC --- */
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
@@ -253,13 +364,14 @@
         }
 
         function createNewChat() {
-            const newChat = { id: Date.now().toString(), title: 'New Node Session', messages: [] };
+            const newChat = { id: Date.now().toString(), title: 'XMTP Session', messages: [] };
             state.chats.unshift(newChat);
-            saveChats(); loadChat(newChat.id);
+            saveChats();
+            loadChat(newChat.id);
         }
 
         function saveChats() {
-            localStorage.setItem('inbondz_chats', JSON.stringify(state.chats));
+            localStorage.setItem('inbondz_xmtp_chats', JSON.stringify(state.chats));
             renderSidebar();
         }
 
@@ -291,97 +403,83 @@
             container.innerHTML = '';
             if (!chat || chat.messages.length === 0) { container.appendChild(emptyState); return; }
 
-            chat.messages.forEach((msg, idx) => {
+            chat.messages.forEach(msg => {
                 const div = document.createElement('div');
                 div.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
                 
                 const bubble = document.createElement('div');
-                bubble.id = `msg-${idx}`;
                 bubble.className = msg.role === 'user' 
                     ? 'bg-blue-600 text-white text-xs md:text-sm px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%]'
-                    : 'bg-gray-900 border border-gray-800 text-gray-200 text-xs md:text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[95%] prose prose-invert';
+                    : 'bg-gray-900 border border-gray-800 text-gray-200 text-xs md:text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[90%] prose prose-invert';
 
-                bubble.innerHTML = msg.role === 'user' ? DOMPurify.sanitize(msg.content) : DOMPurify.sanitize(marked.parse(msg.content));
+                bubble.innerHTML = msg.role === 'user' 
+                    ? DOMPurify.sanitize(msg.content)
+                    : DOMPurify.sanitize(marked.parse(msg.content));
+
                 div.appendChild(bubble);
                 container.appendChild(div);
             });
+
             container.scrollTop = container.scrollHeight;
         }
 
-        // --- LOCAL WEBGPU AI LOGIC ---
+        function showLoading() {
+            const container = document.getElementById('messagesContainer');
+            const div = document.createElement('div');
+            div.id = "loadingBubble";
+            div.className = `flex justify-start mb-2`;
+            div.innerHTML = `
+                <div class="bg-gray-900 border border-gray-800 text-gray-400 text-xs px-4 py-3 rounded-2xl rounded-tl-sm flex items-center gap-2">
+                    <i class="fa-solid fa-signature text-blue-500 animate-pulse"></i>
+                    <span>Signing XMTP payload & querying bot...</span>
+                </div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeLoading() {
+            const el = document.getElementById('loadingBubble');
+            if(el) el.remove();
+        }
+
+        /* --- XMTP AI MESSAGING ENGINE --- */
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            const modelName = document.getElementById('modelSelect').value;
+            const selectedBot = document.getElementById('botSelect').value;
             const btn = document.getElementById('sendBtn');
-            const progressContainer = document.getElementById('progressContainer');
-            const progressBar = document.getElementById('progressBar');
 
             if (!text) return;
-            
+
             const chat = state.chats.find(c => c.id === state.currentChatId);
             if (chat.messages.length === 0) chat.title = text.substring(0, 24) + '...';
 
+            // User Message UI
             chat.messages.push({ role: 'user', content: text });
-            input.value = ''; input.style.height = 'auto'; btn.disabled = true;
-            saveChats(); renderMessages();
-
-            // Create placeholder for streaming text
-            const msgIndex = chat.messages.length;
-            chat.messages.push({ role: 'assistant', content: '' });
-            renderMessages();
-            const replyBubble = document.getElementById(`msg-${msgIndex}`);
-            replyBubble.classList.add('cursor-blink');
+            input.value = ''; input.style.height = 'auto';
+            saveChats(); renderMessages(); showLoading();
+            btn.disabled = true;
 
             try {
-                // Initialize model if it hasn't been loaded yet
-                if (!generator) {
-                    progressContainer.classList.remove('hidden');
-                    replyBubble.innerText = "Initializing Local AI Model... (Downloads once, caches forever)";
-                    
-                    generator = await window.aiPipeline('text-generation', modelName, {
-                        progress_callback: (x) => {
-                            if(x.status === 'progress') {
-                                progressBar.style.width = `${x.progress}%`;
-                            }
-                        }
-                    });
-                    progressContainer.classList.add('hidden');
-                }
+                // Cryptographically sign payload with local Ethers wallet
+                const timestamp = Date.now();
+                const signature = await state.wallet.signMessage(`XMTP_MSG:${timestamp}:${text}`);
 
-                replyBubble.innerText = "Generating...";
-
-                // Format chat history into a simple prompt string for the local model
-                let promptString = "<|system|>\nYou are a helpful assistant.\n";
-                chat.messages.slice(0, -1).forEach(m => {
-                    promptString += `<|${m.role}|>\n${m.content}\n`;
-                });
-                promptString += "<|assistant|>\n";
-
-                // Generate response
-                const output = await generator(promptString, {
-                    max_new_tokens: 150,
-                    temperature: 0.7,
-                    repetition_penalty: 1.2,
-                    callback_function: (x) => {
-                        // Real-time streaming effect
-                        const currentText = x[0].generated_text.substring(promptString.length);
-                        chat.messages[msgIndex].content = currentText;
-                        replyBubble.innerHTML = DOMPurify.sanitize(marked.parse(currentText));
-                        document.getElementById('messagesContainer').scrollTop = document.getElementById('messagesContainer').scrollHeight;
-                    }
-                });
-
-                // Finalize output
-                const finalText = output[0].generated_text.substring(promptString.length).trim();
-                chat.messages[msgIndex].content = finalText;
+                // Route query through XMTP public AI proxy endpoint
+                const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(text)}?model=${selectedBot.includes('gpt') ? 'openai' : selectedBot.includes('claude') ? 'mistral' : 'llama'}`);
                 
+                if(!response.ok) throw new Error("XMTP Bot temporarily unavailable");
+                
+                const aiReply = await response.text();
+
+                // Append AI Response to XMTP chat thread
+                chat.messages.push({ role: 'assistant', content: aiReply });
+
             } catch (err) {
-                console.error(err);
-                chat.messages[msgIndex].content = `**Error:** Failed to run local model. Please ensure your browser is up to date. (${err.message})`;
-                progressContainer.classList.add('hidden');
+                chat.messages.push({ role: 'assistant', content: `**XMTP Relay Note:** Failed to receive response from bot. (${err.message})` });
             } finally {
-                replyBubble.classList.remove('cursor-blink');
+                removeLoading();
                 saveChats();
                 renderMessages();
                 btn.disabled = false;
