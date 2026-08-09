@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inbondz AI | Gemini Engine</title>
+    <title>Inbondz | AT Protocol Chat</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' } } } }
+            theme: { extend: { colors: { gray: { 850: '#1a2232', 900: '#111827', 950: '#070b14' }, blue: { 500: '#0085ff', 600: '#006adc' } } } }
         }
     </script>
 
-    <!-- FontAwesome, Marked (Markdown), DOMPurify (Security) -->
+    <!-- FontAwesome & DOMPurify for Security -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
 
     <style>
@@ -24,542 +23,471 @@
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-        .prose pre { background-color: #030712; padding: 0.75rem; border-radius: 0.5rem; overflow-x: auto; margin-top: 0.5rem; margin-bottom: 0.5rem;}
-        .prose code { color: #818cf8; font-family: monospace; }
-        .prose p { margin-bottom: 0.25rem; }
+        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(31, 41, 55, 1); }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-100 flex h-[100dvh] w-screen overflow-hidden font-sans">
 
-    <!-- PASSKEY AUTH OVERLAY -->
+    <!-- AUTHENTICATION SCREEN -->
     <div id="authScreen" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="max-w-sm w-full bg-gray-900 p-8 rounded-3xl shadow-2xl border border-gray-800 text-center">
             <div class="w-16 h-16 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
-                <i class="fa-solid fa-fingerprint text-3xl"></i>
+                <i class="fa-solid fa-cloud text-3xl"></i>
             </div>
-            <h1 class="text-2xl font-bold tracking-wider mb-1">INBONDZ <span class="text-blue-500">AI</span></h1>
-            <p class="text-xs text-gray-400 mb-8">Secured via IndexedDB & Passkey</p>
+            <h1 class="text-2xl font-bold tracking-wider mb-1">AT <span class="text-blue-500">PROTOCOL</span></h1>
+            <p class="text-xs text-gray-400 mb-6">Log in with your Bluesky Identity</p>
             
-            <button onclick="handlePasskeyAuth()" id="authBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-600/20 transition active:scale-95 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-shield-halved"></i> Unlock Workspace
-            </button>
-            <p id="authStatus" class="text-[11px] text-gray-500 mt-4 h-4"></p>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1">Handle</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-gray-500 font-bold">@</span>
+                        <input type="text" id="handleInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 pl-9 pr-4 text-sm text-white focus:outline-none focus:border-blue-500 transition" placeholder="alice.bsky.social" autocomplete="off">
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-medium text-gray-400 mb-1.5 ml-1 flex justify-between">
+                        App Password 
+                        <a href="https://bsky.app/settings/app-passwords" target="_blank" class="text-blue-500 hover:underline">Get one</a>
+                    </label>
+                    <input type="password" id="passwordInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl py-3 px-4 text-sm text-white focus:outline-none focus:border-blue-500 transition font-mono" placeholder="xxxx-xxxx-xxxx-xxxx">
+                </div>
+
+                <button onclick="login()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/20 transition active:scale-95 mt-2">
+                    Authenticate Session
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- MAIN APP LAYOUT -->
-    <div class="flex w-full h-full relative overflow-hidden">
+    <!-- SIDEBAR OVERLAY (Mobile) -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/70 z-20 hidden md:hidden"></div>
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 sm:w-80 bg-gray-900 border-r border-gray-800 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
         
-        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/70 z-20 hidden md:hidden"></div>
-
-        <!-- Sidebar -->
-        <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-gray-900 border-r border-gray-800 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-                <button onclick="createNewChat()" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition">
-                    <i class="fa-solid fa-plus"></i> New Conversation
+        <!-- Search Actors -->
+        <div class="p-4 border-b border-gray-800 bg-gray-950">
+            <h2 class="text-[10px] font-bold tracking-widest text-gray-500 uppercase mb-2">Start Chat (Search Global Network)</h2>
+            <div class="flex gap-2">
+                <input type="text" id="searchInput" class="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-blue-500 transition placeholder-gray-600" placeholder="e.g. jay.bsky.team" autocomplete="off" onkeydown="if(event.key==='Enter') searchActor()">
+                <button onclick="searchActor()" id="searchBtn" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg px-4 transition flex-shrink-0">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
                 </button>
-                <button onclick="toggleSidebar()" class="md:hidden ml-2 text-gray-400 p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
-            <div id="chatList" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </div>
+        
+        <div class="p-3 text-[10px] font-bold tracking-wider text-gray-500 uppercase mt-2">Direct Messages</div>
+        
+        <!-- Conversation List -->
+        <div id="convoList" class="flex-1 overflow-y-auto px-3 space-y-1"></div>
 
-            <!-- Profile & Settings Bar -->
-            <div class="p-3 border-t border-gray-800 bg-gray-900/80 flex items-center justify-between">
-                <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="openSettings()">
-                    <div class="w-8 h-8 rounded-full bg-blue-600/20 border border-blue-500/50 text-blue-400 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        <i class="fa-brands fa-google"></i>
-                    </div>
+        <!-- Current User Profile Bar -->
+        <div class="p-3 border-t border-gray-800 flex items-center justify-between bg-gray-900 hover:bg-gray-850 cursor-pointer transition" onclick="openSettings()">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <img id="myAvatar" class="w-9 h-9 rounded-full bg-gray-800 object-cover border border-gray-700" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Avatar">
+                <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold truncate text-white" id="myHandleText">@loading</p>
+                    <p class="text-[10px] text-emerald-400 truncate"><i class="fa-solid fa-circle text-[6px] mr-1"></i> Connected to Relay</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-gear text-gray-400 p-2 hover:text-white transition"></i>
+        </div>
+    </aside>
+
+    <!-- MAIN CHAT AREA -->
+    <main class="flex-1 flex flex-col h-full w-full bg-gray-950 relative overflow-hidden">
+        
+        <header class="h-14 glass-panel flex items-center justify-between px-4 z-10 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 mr-1">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <div id="chatHeader" class="hidden flex items-center gap-2">
+                    <img id="chatHeaderAvatar" class="w-8 h-8 rounded-full bg-gray-800 object-cover" src="" alt="Avatar">
                     <div class="min-w-0">
-                        <p class="text-xs font-semibold truncate text-white" id="engineStatusText">AI Key Missing</p>
-                        <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[6px] mr-1"></i> IndexedDB Synced</p>
+                        <h2 id="chatHeaderName" class="text-sm font-bold text-gray-200 leading-tight truncate">Display Name</h2>
+                        <p id="chatHeaderHandle" class="text-[10px] text-blue-400 font-medium tracking-wide truncate">@handle</p>
                     </div>
                 </div>
-                <button onclick="openSettings()" class="text-gray-400 hover:text-white p-2 transition"><i class="fa-solid fa-gear text-sm"></i></button>
             </div>
-        </aside>
+        </header>
 
-        <!-- Main Chat Area -->
-        <main class="flex-1 flex flex-col h-full w-full bg-gray-950 relative overflow-hidden">
-            
-            <header class="h-14 border-b border-gray-800/80 bg-gray-900/60 backdrop-blur-md flex items-center justify-between px-4 z-10 flex-shrink-0">
-                <div class="flex items-center gap-3">
-                    <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-white p-1 mr-1">
-                        <i class="fa-solid fa-bars text-lg"></i>
-                    </button>
-                    <span id="activeModelLabel" class="text-xs font-semibold text-gray-300">Google Gemini Engine</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="promptDeleteCurrentChat()" id="deleteChatBtn" class="text-xs text-red-400/70 hover:text-red-400 p-1.5 transition" title="Delete current chat">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                    <span class="text-[11px] font-bold tracking-widest text-gray-500 uppercase">INBONDZ</span>
-                </div>
-            </header>
-
-            <!-- Messages Container -->
-            <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 pb-28">
-                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4">
-                    <i class="fa-brands fa-google text-4xl mb-3 text-blue-500/40"></i>
-                    <h2 class="text-base font-medium text-gray-300">Seamless AI Workspace</h2>
-                    <p class="text-xs text-gray-500 max-w-xs mt-1">Provide your free Google AI Studio key in settings. Your data is stored safely in your browser's IndexedDB.</p>
-                </div>
+        <!-- Messages Container -->
+        <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 md:p-6 pb-28 flex flex-col">
+            <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-600 text-center p-4 m-auto">
+                <i class="fa-solid fa-comments text-4xl mb-4 text-blue-500/30"></i>
+                <h2 class="text-base font-medium text-gray-300 mb-1">AT Protocol Direct Messages</h2>
+                <p class="text-xs text-gray-500 max-w-sm">Search for a Bluesky handle to start a secure chat. Messages are synced directly with your PDS.</p>
             </div>
+        </div>
 
-            <!-- Input Bar -->
-            <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
-                <div class="max-w-4xl mx-auto flex items-end bg-gray-900 border border-gray-700 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-500 transition-colors">
-                    <textarea id="messageInput" rows="1" class="flex-1 bg-transparent text-sm text-white px-3 py-2.5 focus:outline-none resize-none max-h-32" placeholder="Ask Gemini..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
-                    <button id="sendBtn" onclick="sendMessage()" class="w-10 h-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 disabled:opacity-40 ml-1">
-                        <i class="fa-solid fa-arrow-up text-sm"></i>
-                    </button>
-                </div>
+        <!-- Input Area -->
+        <div class="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-gray-950 via-gray-950 to-transparent">
+            <div class="max-w-4xl mx-auto flex items-end bg-gray-900 border border-gray-700 rounded-2xl p-1.5 shadow-2xl focus-within:border-gray-500 transition-colors">
+                <textarea id="messageInput" disabled rows="1" class="flex-1 bg-transparent text-sm text-white px-4 py-3 focus:outline-none resize-none max-h-32 disabled:opacity-50" placeholder="Select a chat to send message..." oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
+                <button id="sendBtn" disabled onclick="sendMessage()" class="w-11 h-11 bg-blue-600 hover:bg-blue-500 text-white rounded-xl flex items-center justify-center transition flex-shrink-0 ml-1 disabled:opacity-30">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
             </div>
+        </div>
+    </main>
 
-        </main>
-    </div>
-
-    <!-- ONBOARDING & SETTINGS MODAL -->
+    <!-- SETTINGS MODAL -->
     <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-gray-900 w-full max-w-md rounded-3xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
-                <h2 class="text-xs font-bold tracking-wide uppercase text-gray-400">Gemini Key & Security</h2>
+        <div class="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-800 shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-950">
+                <h2 class="text-sm font-bold tracking-wide">Account Settings</h2>
                 <button onclick="closeSettings()" class="text-gray-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
-            <div class="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
-                <!-- API Key Configuration -->
-                <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800">
-                    <label class="block text-xs font-medium text-gray-300 mb-1">Google AI Studio Key</label>
-                    <input type="password" id="apiKeyInput" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 font-mono mb-3" placeholder="AIzaSy...">
-                    
-                    <label class="block text-xs font-medium text-gray-300 mb-1">Select Gemini Endpoint</label>
-                    <select id="modelSelect" class="w-full bg-gray-900 border border-gray-700 text-xs rounded-xl p-2.5 text-white focus:outline-none focus:border-blue-500">
-                        <option value="gemini-3.5-flash">Gemini 3.5 Flash (Fastest & Latest)</option>
-                        <option value="gemini-2.5-flash">Gemini 2.5 Flash (Stable)</option>
-                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (Advanced Reasoning)</option>
-                    </select>
-
-                    <div class="mt-4 text-[11px] text-gray-400 space-y-1">
-                        <p class="font-medium text-gray-300">Don't have a key?</p>
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline flex items-center gap-1">
-                            Get one free from Google AI Studio <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-                        </a>
-                    </div>
+            <div class="p-6 space-y-6">
+                <div class="bg-gray-950 p-4 rounded-2xl border border-gray-800 text-center">
+                    <img id="settingsAvatar" class="w-16 h-16 rounded-full mx-auto mb-3 object-cover border-2 border-gray-700" src="" alt="Avatar">
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">Authenticated As</p>
+                    <p class="text-lg font-bold text-white mb-1" id="settingsHandle">@loading</p>
+                    <p class="text-[10px] font-mono text-gray-500 break-all bg-gray-900 p-2 rounded-lg border border-gray-800 mt-2" id="settingsDid">did:plc:...</p>
                 </div>
 
-                <div class="pt-1">
-                    <button onclick="saveSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-2.5 rounded-xl transition">
-                        Save Configuration
-                    </button>
-                </div>
-
-                <hr class="border-gray-800 my-2">
-
-                <!-- Danger Zone: Delete All Data -->
-                <div class="bg-red-950/20 border border-red-900/40 p-4 rounded-2xl">
-                    <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-1">Danger Zone</h3>
-                    <p class="text-[11px] text-gray-400 mb-3">To wipe all chats, keys, and workspace data permanently from IndexedDB, type <span class="font-bold text-red-300">DELETE</span> below:</p>
-                    
-                    <div class="flex gap-2">
-                        <input type="text" id="deleteAllConfirmInput" class="flex-1 bg-gray-950 border border-red-900/60 rounded-xl p-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold" placeholder="Type DELETE">
-                        <button onclick="submitDeleteAllData()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex-shrink-0">
-                            Wipe Data
-                        </button>
-                    </div>
-                </div>
-
-                <div class="pt-1 text-center">
-                    <button onclick="lockSession()" class="text-xs text-gray-400 hover:text-white transition flex items-center justify-center gap-1.5 mx-auto">
-                        <i class="fa-solid fa-lock text-xs"></i> Lock Session (Requires Passkey to Re-enter)
+                <div class="pt-2">
+                    <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 border border-red-500/20 text-xs font-medium py-3.5 rounded-xl transition">
+                        <i class="fa-solid fa-right-from-bracket"></i> Sign Out Session
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- DELETE SINGLE CHAT MODAL -->
-    <div id="deleteChatModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-800 p-6 text-center space-y-4">
-            <div class="w-12 h-12 bg-red-600/20 text-red-400 rounded-full flex items-center justify-center mx-auto border border-red-500/30">
-                <i class="fa-solid fa-trash-can text-xl"></i>
+    <!-- USER SEARCH MODAL -->
+    <div id="searchModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-gray-900 w-full max-w-sm rounded-3xl border border-gray-800 p-6 space-y-4">
+            <h3 class="text-base font-bold text-gray-200">Start Conversation</h3>
+            <div id="searchResults" class="space-y-2 max-h-60 overflow-y-auto">
+                <!-- Search results injected here -->
             </div>
-            <h3 class="text-base font-bold text-gray-200">Delete This Conversation?</h3>
-            <p class="text-xs text-gray-400">To confirm deletion, type <span class="font-bold text-red-400">DELETE</span> in the box below:</p>
-            
-            <input type="text" id="deleteChatConfirmInput" class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-xs text-white text-center font-bold focus:outline-none focus:border-red-500" placeholder="Type DELETE" autocomplete="off">
-            
-            <div class="flex gap-2 pt-2">
-                <button onclick="closeDeleteChatModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold py-2.5 rounded-xl transition">Cancel</button>
-                <button onclick="confirmDeleteCurrentChat()" class="flex-1 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold py-2.5 rounded-xl transition">Delete Chat</button>
-            </div>
+            <button onclick="closeSearchModal()" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold py-2.5 rounded-xl transition mt-2">Cancel</button>
         </div>
     </div>
 
     <script>
-        /* --- 1. INDEXEDDB PERSISTENCE LAYER --- */
-        const DB_NAME = "InbondzIndexedDB";
-        const DB_VERSION = 1;
-
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains("chats")) db.createObjectStore("chats", { keyPath: "id" });
-                    if (!db.objectStoreNames.contains("config")) db.createObjectStore("config", { keyPath: "key" });
-                };
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
-            });
-        }
-
-        async function dbSave(storeName, data) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(storeName, "readwrite");
-                const store = tx.objectStore(storeName);
-                store.put(data);
-                tx.oncomplete = () => resolve();
-                tx.onerror = () => reject(tx.error);
-            });
-        }
-
-        async function dbGetAll(storeName) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(storeName, "readonly");
-                const store = tx.objectStore(storeName);
-                const req = store.getAll();
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        async function dbGet(storeName, key) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(storeName, "readonly");
-                const store = tx.objectStore(storeName);
-                const req = store.get(key);
-                req.onsuccess = () => resolve(req.result ? req.result.value : null);
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        async function dbDelete(storeName, key) {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(storeName, "readwrite");
-                const store = tx.objectStore(storeName);
-                store.delete(key);
-                tx.oncomplete = () => resolve();
-                tx.onerror = () => reject(tx.error);
-            });
-        }
-
-        async function dbClearAll() {
-            const db = await openDB();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(["chats", "config"], "readwrite");
-                tx.objectStore("chats").clear();
-                tx.objectStore("config").clear();
-                tx.oncomplete = () => resolve();
-                tx.onerror = () => reject(tx.error);
-            });
-        }
-
-        /* --- 2. STATE & INITIALIZATION --- */
+        /* --- 1. STATE & CONSTANTS --- */
+        const APPVIEW_URL = 'https://bsky.social/xrpc';
+        const CHAT_URL = 'https://api.bsky.chat/xrpc';
+        
         let state = {
-            chats: [],
-            currentChatId: null,
-            apiKey: '',
-            model: 'gemini-3.5-flash' // Default active model
+            session: JSON.parse(localStorage.getItem('atproto_session') || 'null'),
+            profile: null,
+            convos: [],
+            activeConvoId: null,
+            pollInterval: null
         };
 
-        window.onload = async () => {
-            state.apiKey = (await dbGet("config", "apiKey")) || '';
-            state.model = (await dbGet("config", "model")) || 'gemini-3.5-flash';
-            
-            const allChats = await dbGetAll("chats");
-            state.chats = allChats.sort((a,b) => b.id - a.id);
-
-            // Check Passkey Session
-            if (sessionStorage.getItem('inbondz_passkey_active') === 'true') {
-                bypassAuthScreen();
+        window.onload = () => {
+            if (state.session) {
+                initApp();
+            } else {
+                document.getElementById('authScreen').classList.remove('hidden');
             }
         };
 
-        /* --- 3. PASSKEY AUTHENTICATION --- */
-        async function handlePasskeyAuth() {
-            const status = document.getElementById('authStatus');
-            const domain = window.location.hostname;
-            const isRegistered = localStorage.getItem('inbondz_passkey_reg');
-
-            status.innerText = "Prompting biometric authentication...";
-
-            if (domain === '') {
-                status.innerText = "Local file protocol detected. Authorizing...";
-                setTimeout(grantPasskeySession, 400);
-                return;
-            }
-
-            try {
-                if (!isRegistered) {
-                    await navigator.credentials.create({
-                        publicKey: {
-                            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                            rp: { name: "Inbondz AI", id: domain },
-                            user: { id: window.crypto.getRandomValues(new Uint8Array(16)), name: "user", displayName: "User" },
-                            pubKeyCredParams: [{ type: "public-key", alg: -7 }],
-                            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
-                            timeout: 60000
-                        }
-                    });
-                    localStorage.setItem('inbondz_passkey_reg', 'true');
-                } else {
-                    await navigator.credentials.get({
-                        publicKey: {
-                            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-                            userVerification: 'required',
-                            timeout: 60000
-                        }
-                    });
-                }
-                grantPasskeySession();
-            } catch (err) {
-                console.warn("Passkey fallback activated:", err);
-                status.innerText = "Session authorized via secure fallback.";
-                setTimeout(grantPasskeySession, 500);
-            }
-        }
-
-        function grantPasskeySession() {
-            sessionStorage.setItem('inbondz_passkey_active', 'true');
-            bypassAuthScreen();
-        }
-
-        function bypassAuthScreen() {
-            document.getElementById('authScreen').classList.add('hidden');
-            document.getElementById('apiKeyInput').value = state.apiKey;
-            document.getElementById('modelSelect').value = state.model;
+        /* --- 2. CORE XRPC FETCH UTILITY --- */
+        async function xrpc(method, endpoint, body = null, isChat = false) {
+            const baseUrl = isChat ? CHAT_URL : APPVIEW_URL;
+            const headers = { 'Content-Type': 'application/json' };
             
-            updateEngineStatusLabel();
-
-            if (state.chats.length === 0) {
-                createNewChat();
-            } else {
-                loadChat(state.chats[0].id);
-            }
-        }
-
-        function lockSession() {
-            sessionStorage.removeItem('inbondz_passkey_active');
-            location.reload();
-        }
-
-        function updateEngineStatusLabel() {
-            const label = document.getElementById('engineStatusText');
-            if (!state.apiKey) {
-                label.innerText = "API Key Required";
-                label.classList.replace('text-white', 'text-red-400');
-            } else {
-                label.innerText = "Google Gemini Active";
-                label.classList.replace('text-red-400', 'text-white');
-            }
-        }
-
-        /* --- 4. CHAT WORKSPACE & UI LOGIC --- */
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('sidebarOverlay').classList.toggle('hidden');
-        }
-
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }
-
-        function handleEnter(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        }
-
-        async function createNewChat() {
-            const newChat = { id: Date.now(), title: 'New Conversation', messages: [] };
-            state.chats.unshift(newChat);
-            await dbSave("chats", newChat);
-            renderSidebar();
-            loadChat(newChat.id);
-        }
-
-        function renderSidebar() {
-            const list = document.getElementById('chatList');
-            list.innerHTML = '';
-            state.chats.forEach(chat => {
-                const isActive = chat.id === state.currentChatId;
-                const btn = document.createElement('button');
-                btn.className = `w-full text-left truncate py-2.5 px-3 rounded-xl text-xs font-medium transition ${isActive ? 'bg-gray-800 text-white border border-gray-700' : 'text-gray-400 hover:bg-gray-850 hover:text-gray-200'}`;
-                btn.innerText = chat.title;
-                btn.onclick = () => loadChat(chat.id);
-                list.appendChild(btn);
-            });
-        }
-
-        function loadChat(id) {
-            state.currentChatId = id;
-            renderSidebar();
-            renderMessages();
-            if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) toggleSidebar();
-        }
-
-        function renderMessages() {
-            const container = document.getElementById('messagesContainer');
-            const emptyState = document.getElementById('emptyState');
-            const chat = state.chats.find(c => c.id === state.currentChatId);
-
-            container.innerHTML = '';
-            if (!chat || chat.messages.length === 0) { container.appendChild(emptyState); return; }
-
-            chat.messages.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = `flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
-                
-                const bubble = document.createElement('div');
-                bubble.className = msg.role === 'user' 
-                    ? 'bg-blue-600 text-white text-xs md:text-sm px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%]'
-                    : 'bg-gray-900 border border-gray-800 text-gray-200 text-xs md:text-sm px-4 py-3 rounded-2xl rounded-tl-sm max-w-[90%] prose prose-invert';
-
-                bubble.innerHTML = msg.role === 'user' 
-                    ? DOMPurify.sanitize(msg.content)
-                    : DOMPurify.sanitize(marked.parse(msg.content));
-
-                div.appendChild(bubble);
-                container.appendChild(div);
-            });
-
-            container.scrollTop = container.scrollHeight;
-        }
-
-        /* --- 5. GOOGLE GEMINI EXECUTION ENGINE --- */
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            const btn = document.getElementById('sendBtn');
-
-            if (!text) return;
-
-            if (!state.apiKey) {
-                openSettings();
-                alert("Please add your Google AI Studio key to proceed.");
-                return;
+            if (state.session && state.session.accessJwt) {
+                headers['Authorization'] = `Bearer ${state.session.accessJwt}`;
             }
 
-            const chat = state.chats.find(c => c.id === state.currentChatId);
-            if (chat.messages.length === 0) chat.title = text.substring(0, 24) + '...';
+            const options = { method, headers };
+            if (body) options.body = JSON.stringify(body);
+            
+            const res = await fetch(`${baseUrl}/${endpoint}`, options);
+            const data = await res.json();
+            
+            if (!res.ok) {
+                if (res.status === 401) logout(true); // Token expired
+                throw new Error(data.message || 'XRPC Error');
+            }
+            return data;
+        }
 
-            chat.messages.push({ role: 'user', content: text });
-            input.value = ''; input.style.height = 'auto';
-            await dbSave("chats", chat);
-            renderSidebar();
-            renderMessages();
+        /* --- 3. AUTHENTICATION --- */
+        async function login() {
+            const identifier = document.getElementById('handleInput').value.trim().replace('@', '');
+            const password = document.getElementById('passwordInput').value.trim();
+            const btn = document.getElementById('loginBtn');
+
+            if (!identifier || !password) return alert("Please provide handle and app password.");
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
             btn.disabled = true;
 
-            // Loading indicator
-            const container = document.getElementById('messagesContainer');
-            const loadDiv = document.createElement('div');
-            loadDiv.id = "aiLoadingBubble";
-            loadDiv.className = "flex justify-start mb-4";
-            loadDiv.innerHTML = `
-                <div class="bg-gray-900 border border-gray-800 text-gray-400 text-xs px-4 py-3 rounded-2xl flex items-center gap-2 shadow-md">
-                    <i class="fa-brands fa-google text-blue-400 animate-pulse"></i> Generating response...
-                </div>`;
-            container.appendChild(loadDiv);
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-
             try {
-                // Formatting for strict Gemini Requirements (Role must be "user" or "model")
-                const geminiPayloadContents = chat.messages.map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                }));
-
-                // Dynamic Model URL parsing based on user's selection
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${state.model}:generateContent?key=${encodeURIComponent(state.apiKey.trim())}`;
-
-                const res = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: geminiPayloadContents })
-                });
-                
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    throw new Error(data.error ? data.error.message : "Authentication or Payload Failed.");
-                }
-
-                const aiReply = data.candidates[0].content.parts[0].text;
-                chat.messages.push({ role: 'assistant', content: aiReply });
-
+                const data = await xrpc('POST', 'com.atproto.server.createSession', { identifier, password });
+                state.session = data;
+                localStorage.setItem('atproto_session', JSON.stringify(data));
+                initApp();
             } catch (err) {
-                chat.messages.push({ role: 'assistant', content: `**API Error:** ${err.message}` });
-            } finally {
-                const el = document.getElementById('aiLoadingBubble');
-                if (el) el.remove();
-                
-                await dbSave("chats", chat);
-                renderMessages();
+                alert(`Login Failed: ${err.message}`);
+                btn.innerHTML = 'Authenticate Session';
                 btn.disabled = false;
             }
         }
 
-        /* --- 6. SETTINGS & PROTECTED DATA DELETION --- */
-        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-        async function saveSettings() {
-            const keyVal = document.getElementById('apiKeyInput').value.trim();
-            const modelVal = document.getElementById('modelSelect').value;
-            
-            state.apiKey = keyVal;
-            state.model = modelVal;
-            
-            await dbSave("config", { key: "apiKey", value: keyVal });
-            await dbSave("config", { key: "model", value: modelVal });
-            
-            updateEngineStatusLabel();
-            closeSettings();
-        }
-
-        // Single Chat Deletion Logic
-        function promptDeleteCurrentChat() {
-            if (!state.currentChatId) return;
-            document.getElementById('deleteChatConfirmInput').value = '';
-            document.getElementById('deleteChatModal').classList.remove('hidden');
-        }
-        function closeDeleteChatModal() { document.getElementById('deleteChatModal').classList.add('hidden'); }
-
-        async function confirmDeleteCurrentChat() {
-            const val = document.getElementById('deleteChatConfirmInput').value.trim();
-            if (val !== "DELETE") return alert("Type 'DELETE' in all caps to confirm deletion.");
-
-            await dbDelete("chats", state.currentChatId);
-            state.chats = state.chats.filter(c => c.id !== state.currentChatId);
-            closeDeleteChatModal();
-
-            if (state.chats.length > 0) loadChat(state.chats[0].id);
-            else createNewChat();
-        }
-
-        // Wipe All Data Logic
-        async function submitDeleteAllData() {
-            const val = document.getElementById('deleteAllConfirmInput').value.trim();
-            if (val !== "DELETE") return alert("Type 'DELETE' in all caps to confirm wiping all data.");
-
-            await dbClearAll();
-            localStorage.clear();
-            sessionStorage.clear();
+        function logout(tokenExpired = false) {
+            if (tokenExpired) alert("Your session expired. Please log in again.");
+            localStorage.removeItem('atproto_session');
             location.reload();
         }
+
+        /* --- 4. APP INITIALIZATION & PROFILE --- */
+        async function initApp() {
+            document.getElementById('authScreen').classList.add('hidden');
+            
+            try {
+                // Fetch current user profile
+                const profile = await xrpc('GET', `app.bsky.actor.getProfile?actor=${state.session.did}`);
+                state.profile = profile;
+                
+                // Update UI
+                document.getElementById('myHandleText').innerText = '@' + profile.handle;
+                document.getElementById('settingsHandle').innerText = '@' + profile.handle;
+                document.getElementById('settingsDid').innerText = profile.did;
+                
+                if (profile.avatar) {
+                    document.getElementById('myAvatar').src = profile.avatar;
+                    document.getElementById('settingsAvatar').src = profile.avatar;
+                }
+
+                // Initial fetch & start polling
+                await fetchConvos();
+                startPolling();
+
+            } catch (err) {
+                console.error("Failed to init:", err);
+            }
+        }
+
+        /* --- 5. SEARCH ACTORS (GLOBAL NETWORK) --- */
+        async function searchActor() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            const btn = document.getElementById('searchBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+
+            try {
+                const data = await xrpc('GET', `app.bsky.actor.searchActors?q=${encodeURIComponent(query)}&limit=5`);
+                const resultsContainer = document.getElementById('searchResults');
+                resultsContainer.innerHTML = '';
+
+                if (data.actors.length === 0) {
+                    resultsContainer.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">No users found.</p>';
+                } else {
+                    data.actors.forEach(actor => {
+                        const div = document.createElement('div');
+                        div.className = "flex items-center justify-between bg-gray-950 p-3 rounded-xl border border-gray-800 cursor-pointer hover:border-blue-500 transition";
+                        div.onclick = () => getOrCreateConvo(actor.did, actor);
+                        
+                        const avatarSrc = actor.avatar || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+                        div.innerHTML = `
+                            <div class="flex items-center gap-3 min-w-0">
+                                <img src="${avatarSrc}" class="w-8 h-8 rounded-full bg-gray-800 object-cover flex-shrink-0">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-white truncate">${DOMPurify.sanitize(actor.displayName || actor.handle)}</p>
+                                    <p class="text-[10px] text-gray-500 truncate">@${actor.handle}</p>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-comment-medical text-blue-500 text-sm"></i>
+                        `;
+                        resultsContainer.appendChild(div);
+                    });
+                }
+                
+                document.getElementById('searchModal').classList.remove('hidden');
+                document.getElementById('searchInput').value = '';
+            } catch (err) {
+                alert(`Search failed: ${err.message}`);
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass text-xs"></i>';
+            }
+        }
+
+        function closeSearchModal() {
+            document.getElementById('searchModal').classList.add('hidden');
+        }
+
+        /* --- 6. MESSAGING & CONVERSATIONS --- */
+        async function fetchConvos(silent = false) {
+            try {
+                // AT Protocol Direct Messages endpoint
+                const data = await xrpc('GET', 'chat.bsky.convo.listConvos', null, true);
+                state.convos = data.convos;
+                renderConvoSidebar();
+            } catch (err) {
+                console.error("Failed to fetch convos:", err);
+            }
+        }
+
+        function renderConvoSidebar() {
+            const list = document.getElementById('convoList');
+            list.innerHTML = '';
+            
+            state.convos.forEach(convo => {
+                // Find the other member in the convo
+                const peer = convo.members.find(m => m.did !== state.session.did) || convo.members[0];
+                const isActive = convo.id === state.activeConvoId;
+                
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center gap-3 text-left py-2.5 px-3 rounded-xl transition border border-transparent ${isActive ? 'bg-gray-800 text-white border-gray-700' : 'text-gray-400 hover:bg-gray-850 hover:text-gray-200'}`;
+                btn.onclick = () => openConvo(convo.id, peer);
+                
+                const avatarSrc = peer.avatar || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+                const lastMsg = convo.lastMessage ? DOMPurify.sanitize(convo.lastMessage.text) : 'New conversation';
+                const unreadDot = convo.unreadCount > 0 ? '<div class="w-2 h-2 bg-blue-500 rounded-full ml-auto"></div>' : '';
+
+                btn.innerHTML = `
+                    <img src="${avatarSrc}" class="w-9 h-9 rounded-full bg-gray-800 object-cover flex-shrink-0">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium truncate text-white">${DOMPurify.sanitize(peer.displayName || peer.handle)}</p>
+                        <p class="text-[10px] text-gray-500 truncate">${lastMsg}</p>
+                    </div>
+                    ${unreadDot}
+                `;
+                list.appendChild(btn);
+            });
+        }
+
+        async function getOrCreateConvo(peerDid, peerProfile) {
+            closeSearchModal();
+            try {
+                const data = await xrpc('GET', `chat.bsky.convo.getConvoForMembers?members=${peerDid}`, null, true);
+                await fetchConvos(); // Refresh list to include new chat
+                openConvo(data.convo.id, peerProfile);
+            } catch (err) {
+                alert(`Could not start chat: ${err.message}`);
+            }
+        }
+
+        async function openConvo(convoId, peer) {
+            state.activeConvoId = convoId;
+            
+            // UI Updates
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            
+            document.getElementById('chatHeaderName').innerText = peer.displayName || peer.handle;
+            document.getElementById('chatHeaderHandle').innerText = '@' + peer.handle;
+            document.getElementById('chatHeaderAvatar').src = peer.avatar || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+            
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendBtn');
+            input.disabled = false; input.placeholder = "Send a message...";
+            sendBtn.disabled = false;
+
+            renderConvoSidebar(); // Update active highlights
+            
+            if(!document.getElementById('sidebarOverlay').classList.contains('hidden')) toggleSidebar();
+
+            // Load Messages
+            await fetchMessages();
+            
+            // Mark as read
+            try {
+                await xrpc('POST', 'chat.bsky.convo.updateRead', { convoId }, true);
+                fetchConvos(true); // Update unread dots silently
+            } catch (e) {}
+        }
+
+        async function fetchMessages(silent = false) {
+            if (!state.activeConvoId) return;
+            try {
+                // Fetch recent messages
+                const data = await xrpc('GET', `chat.bsky.convo.getMessages?convoId=${state.activeConvoId}&limit=50`, null, true);
+                
+                const container = document.getElementById('messagesContainer');
+                
+                // Only re-render if we aren't silencing, OR if there's a new message
+                // For simplicity in this HTML file, we re-render entirely to keep it robust.
+                
+                // AT Protocol returns messages newest first, so we reverse to render top-to-bottom
+                const msgs = data.messages.reverse();
+                container.innerHTML = '';
+                
+                msgs.forEach(msg => {
+                    if (msg.$type !== 'chat.bsky.convo.defs#messageView') return; // Skip deleted/other types
+                    
+                    const isMe = msg.sender.did === state.session.did;
+                    const div = document.createElement('div');
+                    div.className = `flex group w-full ${isMe ? 'justify-end' : 'justify-start'} mb-3`;
+                    
+                    const safeText = DOMPurify.sanitize(msg.text).replace(/\n/g, '<br>'); 
+                    
+                    div.innerHTML = `
+                        <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-gray-800 border border-gray-700 text-gray-200'} text-[13px] md:text-sm px-4 py-2.5 rounded-2xl ${isMe ? 'rounded-br-sm' : 'rounded-bl-sm'} max-w-[80%] break-words shadow-sm">
+                            ${safeText}
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+                
+                if(!silent) container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                console.error("Failed to load messages", err);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !state.activeConvoId) return;
+            
+            input.value = ''; input.style.height = 'auto';
+
+            // Optimistic rendering (shows instantly)
+            const container = document.getElementById('messagesContainer');
+            const safeText = DOMPurify.sanitize(text).replace(/\n/g, '<br>');
+            const div = document.createElement('div');
+            div.className = `flex justify-end mb-3 opacity-70`;
+            div.innerHTML = `<div class="bg-blue-600 text-white text-[13px] md:text-sm px-4 py-2.5 rounded-2xl rounded-br-sm max-w-[80%] break-words shadow-sm">${safeText}</div>`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                // AT Protocol requires message objects containing plain text
+                await xrpc('POST', 'chat.bsky.convo.sendMessage', {
+                    convoId: state.activeConvoId,
+                    message: { text: text }
+                }, true);
+                
+                // Fetch real state to confirm and remove opacity
+                await fetchMessages(false);
+                fetchConvos(true);
+            } catch (err) {
+                alert(`Failed to send message: ${err.message}`);
+                div.remove(); // Remove failed optimistic message
+            }
+        }
+
+        /* --- 7. POLLING & UTILS --- */
+        function startPolling() {
+            if (state.pollInterval) clearInterval(state.pollInterval);
+            state.pollInterval = setInterval(() => {
+                if (state.activeConvoId) fetchMessages(true);
+                fetchConvos(true);
+            }, 5000); // Check for new messages every 5 seconds
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        }
+        function openSettings() { document.getElementById('settingsModal').classList.remove('hidden'); }
+        function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
+        function autoResize(t) { t.style.height = 'auto'; t.style.height = t.scrollHeight + 'px'; }
+        function handleEnter(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
     </script>
 </body>
 </html>
